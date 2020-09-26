@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*打开相机,获得句柄</c>
+<l>open_framegrabber ('DirectShow',1, 1, 0, 0, 0, 0, 'default', 8, 'rgb', -1, 'false', 'default', '0', -1, 1, AcqHandle)</l>
+<c>*捕捉一帧获得图像的大小</c>
+<l>grab_image(baseImg,AcqHandle)</l>
+<c>*获得图片的宽高</c>
+<l>get_image_size (baseImg,w,h)</l>
+<c>*新建窗口</c>
+<l>dev_open_window(0,0,w,h,'black', WindowHandle)</l>
+<c>*采集图像并处理</c>
+<c>*启动预抓图</c>
+<l>grab_image_start (AcqHandle, -1)</l>
+<l>while(1)</l>
+<c>    *开始异步抓图</c>
+<l>    grab_image_async (img,AcqHandle, -1)</l>
+<c>    *显示图像,其实不要这个也显示了</c>
+<l>    dev_display(img)</l>
+<c>    </c>
+<c>    *开始处理图像</c>
+<c>    *转化为灰度图</c>
+<l>    rgb1_to_gray(img,grayImg)</l>
+<c>    *阈值提取亮处</c>
+<l>    threshold(grayImg,Region, 200, 255)</l>
+<c>    *填充区域</c>
+<l>    fill_up(Region, RegionFillUp)</l>
+<c>    *找到连接的区域</c>
+<l>    connection(RegionFillUp, ConnectedRegions)</l>
+<c>    *选出大面积的目标</c>
+<l>    select_shape(ConnectedRegions, SelectedRegions, 'area', 'and', 500, 99999)</l>
+<c>    *计算目标的个数</c>
+<l>    count_obj (SelectedRegions,Numb)</l>
+<c>    *设置显示文字颜色</c>
+<l>    dev_set_color('white')</l>
+<c>    *设置文字位置</c>
+<l>    set_tposition (WindowHandle, 24, 12)</l>
+<c>    *查询可以设置的字体</c>
+<l>*     query_font (WindowHandle, Font)</l>
+<c>    *设置字体</c>
+<l>    set_font (WindowHandle, 'default-24')</l>
+<c>    *设定输出文字</c>
+<c>    *write_string会输出dev_set_color的颜色的字</c>
+<l>    write_string(WindowHandle,'有'+Numb+'个目标')</l>
+<l>*     disp_message (WindowHandle, '有'+Numb+'个目标啊', 'window', 12, 12, 'yellow', 'false')</l>
+<c>    *设置目标颜色为多彩色(12)</c>
+<l>    dev_set_colored (12)</l>
+<c>    </c>
+<c>    *每次处理完毕后停止,也可以设置断点的</c>
+<l>    stop ()</l>
+<l>endwhile</l>
+<c></c>
+<c>*采集结束,释放相机资源</c>
+<l>close_framegrabber (AcqHandle)</l>
+<c></c>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
