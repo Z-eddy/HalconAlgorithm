@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*读取图片</c>
+<l>read_image (img,'D:/各种学习/语言/halcon/Halcon机器视觉算法原理与编程实战/code/data/display.jpg')</l>
+<c>*获得图片的宽高</c>
+<l>get_image_size (img, Width, Height)</l>
+<c>*建立新的窗口</c>
+<l>dev_close_window ()</l>
+<l>dev_open_window(0, 0, Width, Height, 'black', WindowHandle)</l>
+<c>*转化为灰度图</c>
+<l>rgb1_to_gray (img, GrayImage)</l>
+<c>*阈值分割,提取黑色的屏幕</c>
+<l>threshold(GrayImage, DarkRegion, 0, 100)</l>
+<c>*寻找连接件</c>
+<l>connection (DarkRegion, ConnectedRegions)</l>
+<c>*填充</c>
+<l>* fill_up (ConnectedRegions, RegionFillUp)</l>
+<c>*根据最大面积找到屏幕</c>
+<l>select_shape_std(ConnectedRegions, SelectedRegions, 'max_area', 70)</l>
+<c>*裁剪,只剩下显示器的屏幕区域</c>
+<l>reduce_domain (GrayImage, SelectedRegions, ImageReduced)</l>
+<c>*创建边缘轮廓</c>
+<l>gen_contour_region_xld (SelectedRegions,Contours,'border')</l>
+<c>*分割轮廓为边线</c>
+<l>segment_contours_xld (Contours, ContoursSplit, 'lines', 5, 4, 2)</l>
+<c>*计算创建的边数目</c>
+<l>count_obj (ContoursSplit,num)</l>
+<c>*创建容器,储存顶点x/y坐标</c>
+<l>XCoordCorners:=[]</l>
+<l>YCoordCorners:=[]</l>
+<c>*将每条边的顶点储存到容器中</c>
+<l>for i:=1 to num by 1</l>
+<l>    select_obj (ContoursSplit, ObjectSelected, i)</l>
+<c>    *拟合边</c>
+<l>    fit_line_contour_xld (ObjectSelected, 'tukey', -1, 0, 5, 2, RowBegin, ColBegin, RowEnd, ColEnd, Nr, Nc, Dist)</l>
+<c>    *储存顶点x/y</c>
+<l>    tuple_concat (XCoordCorners,RowBegin,XCoordCorners)</l>
+<l>    tuple_concat (YCoordCorners,ColBegin,YCoordCorners)</l>
+<l>endfor</l>
+<c></c>
+<c>*投影变换,为4个特征点与校正后的坐标建立联系</c>
+<l>XOFF:=100</l>
+<l>YOFF:=100*Height/Width</l>
+<l>hom_vector_to_proj_hom_mat2d (XCoordCorners, YCoordCorners, [1,1,1,1], [YOFF,YOFF,Height-YOFF,Height-YOFF],[XOFF,Width-XOFF,Width-XOFF,XOFF], [1,1,1,1], 'normalized_dlt', HomMat2D)</l>
+<c>*投影变换</c>
+<l>projective_trans_image(img, TransImage, HomMat2D, 'bilinear', 'false', 'false')</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
