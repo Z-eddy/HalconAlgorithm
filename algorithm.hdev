@@ -3,49 +3,6 @@
 <procedure name="main">
 <interface/>
 <body>
-<l>dev_close_window ()</l>
-<l>read_image (Image, 'C:/Users/Public/Documents/MVTec/HALCON-18.11-Progress/examples/images/die/die_03.png')</l>
-<l>get_image_size (Image, Width, Height)</l>
-<l>dev_open_window_fit_image (Image, 0, 0, -1, -1, WindowHandle)</l>
-<c>*使用助手进行二值化,寻找目标区域轮廓进行裁剪</c>
-<l>threshold (Image, Regions, 84, 255)</l>
-<c>*设置显示绿色边框</c>
-<l>dev_set_color ('green')</l>
-<l>dev_set_draw ('margin')</l>
-<c>*找到目标处理图</c>
-<l>shape_trans (Regions, RegionTrans, 'rectangle2')</l>
-<c>*裁剪目标区域</c>
-<l>reduce_domain (Image, RegionTrans, ImageReduced)</l>
-<c>*对目标区域进行二值化,找到ROI</c>
-<l>threshold (ImageReduced, Regions1, 0, 42)</l>
-<c>*形态学-开操作(圆腐蚀),找到目标圆</c>
-<l>opening_circle (Regions1, RegionOpening, 15)</l>
-<c>*分离连接组件</c>
-<l>connection (RegionOpening, ConnectedRegions)</l>
-<c>*特征值-圆度找到目标</c>
-<l>select_shape (ConnectedRegions, SelectedRegions, 'circularity', 'and', 0.851, 1)</l>
-<c>*转换为颜色块</c>
-<l>dev_set_colored(12)</l>
-<l>dev_set_draw ('fill')</l>
-<l>dev_display (SelectedRegions)</l>
-<c>*对所有对象从左到右在数组中进行排序</c>
-<l>sort_region (SelectedRegions, SortedRegions, 'first_point', 'true', 'column')</l>
-<c>*对每个对象进行最小外接圆拟合</c>
-<l>smallest_circle (SortedRegions, Row, Column, Radius)</l>
-<c>*计算圆心的数量</c>
-<l>cenNum:=|Radius|</l>
-<c>*直径</c>
-<l>diameter:=2*Radius</l>
-<c>*直径均值</c>
-<l>meanDiameter:=mean(diameter)</l>
-<c>*最小直径</c>
-<l>minDiameter:=min(diameter)</l>
-<c>*在原图上显示所有圆</c>
-<l>dev_display (Image)</l>
-<l>disp_circle (WindowHandle, Row, Column, Radius)</l>
-<c>*打印圆信息(白色)</c>
-<l>dev_set_color ('white')</l>
-<l>disp_message (WindowHandle, '直径:'+diameter$'.4', 'image', Row-diameter, Column, 'white', 'false')</l>
 <c></c>
 </body>
 <docu id="main">
