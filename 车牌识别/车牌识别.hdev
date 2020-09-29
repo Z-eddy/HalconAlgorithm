@@ -13,7 +13,7 @@
 <c>*分离颜色通道</c>
 <l>decompose3 (origiImage, redChn, greenChn, blueChn)</l>
 <c>*转换到hsv色彩空间</c>
-<l>trans_from_rgb (redChn,greenChn,blueChn,hueChn, saturationChn, valueChn, 'hsv')</l>
+<l>trans_from_rgb (redChn,greenChn,blueChn,hueChn, saturationChn, intensityChn, 'hsv')</l>
 <c>*根据筛选出的最高对比度图进行二值化</c>
 <l>threshold (saturationChn, Regions, 122, 255)</l>
 <c>*开操作去掉部分杂点</c>
