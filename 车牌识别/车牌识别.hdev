@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_close_window ()</l>
+<c as_id="image_acquisition" as_name="Image Acquisition 01" as_grp="[1,1]" as_ord="1">*读取图片</c>
+<l as_id="image_acquisition" as_name="Image Acquisition 01" as_grp="[2,1]" as_ord="1">read_image (origiImage, 'E:/practice/halcon/HalconAlgorithm/车牌识别/倾斜车牌.jpg')</l>
+<c>*开启窗口</c>
+<l>dev_open_window_fit_image (origiImage, 0, 0, -1, -1, WindowHandle)</l>
+<c></c>
+<c>*车牌定位及矫正</c>
+<c>*分离颜色通道</c>
+<l>decompose3 (origiImage, redChn, greenChn, blueChn)</l>
+<c>*转换到hsv色彩空间</c>
+<l>trans_from_rgb (redChn,greenChn,blueChn,hueChn, saturationChn, valueChn, 'hsv')</l>
+<c>*根据筛选出的最高对比度图进行二值化</c>
+<l>threshold (saturationChn, Regions, 122, 255)</l>
+<c>*开操作去掉部分杂点</c>
+<l>opening_rectangle1 (Regions, RegionOpening, 3, 3)</l>
+<c>*阻断连接</c>
+<l>connection (RegionOpening, ConnectedRegions)</l>
+<c>*根据特征筛选出车牌区域</c>
+<l>select_shape (ConnectedRegions, SelectedRegions1, ['row','height'], 'and', [199.19,49.564], [500,100])</l>
+<c>*连接分散的特征</c>
+<l>union1 (SelectedRegions1, RegionUnion)</l>
+<c>*填充空洞</c>
+<l>fill_up (RegionUnion, RegionFillUp)</l>
+<c>*矩形拟合</c>
+<l>shape_trans (RegionFillUp, RegionTrans, 'rectangle2')</l>
+<c>*计算矩形的旋转角度</c>
+<l>orientation_region (RegionTrans, Phi)</l>
+<c>*计算图像的参数</c>
+<l>area_center (RegionTrans, Area, Row, Column)</l>
+<c>*寻找图片旋转的矩阵</c>
+<l>vector_angle_to_rigid (Row, Column, Phi, Row, Column, 0, HomMat2D)</l>
+<c>*将车牌region旋转回来</c>
+<l>affine_trans_region (RegionTrans, RegionAffineTrans, HomMat2D, 'nearest_neighbor')</l>
+<c>*将图片旋转回来</c>
+<l>affine_trans_image (origiImage,ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
+<c>*裁剪目标区域</c>
+<l>reduce_domain (ImageAffineTrans, RegionAffineTrans, ImageReduced)</l>
+<c></c>
+<c>*识别车牌</c>
+<l>rgb1_to_gray (ImageReduced, GrayImage)</l>
+<c>*反转颜色,因为训练的算法只识别黑色字体</c>
+<l>invert_image (GrayImage, ImageInvert)</l>
+<l>* bit_not (GrayImage, ImageNot)</l>
+<c>*二值化分离出中间数字区</c>
+<l>threshold (ImageInvert, Regions1, 0, 132)</l>
+<c>*分离单个</c>
+<l>connection (Regions1, ConnectedRegions1)</l>
+<c>*根据特征筛选</c>
+<l>select_shape (ConnectedRegions1, SelectedRegions, ['area','height'], 'and', [398.38,44.327], [1000,100])</l>
+<c>*确定训练好的ocr模型</c>
+<l>read_ocr_class_mlp ( 'Industrial_0-9A-Z_NoRej.omc', OCRHandle)</l>
+<c>*识别数字</c>
+<l>do_ocr_multi_class_mlp (SelectedRegions, ImageInvert, OCRHandle, Class, Confidence)</l>
+<c>*找到最小外接矩形,确定打印数字的位置</c>
+<l>smallest_rectangle1 (SelectedRegions, Row1, Column1, Row2, Column2)</l>
+<c>*打印数字,显示在原图上</c>
+<l>set_font (WindowHandle, 'default-Normal-30')</l>
+<l>* disp_message (WindowHandle, Class, 'window', Row2+30, Column1+20, 'white', 'false')</l>
+<l>for i:=0 to |Class|-1 by 1</l>
+<l>    disp_message (WindowHandle, Class[i], 'image', Row2[i], Column1[i], 'white', 'false')</l>
+<l>endfor</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
