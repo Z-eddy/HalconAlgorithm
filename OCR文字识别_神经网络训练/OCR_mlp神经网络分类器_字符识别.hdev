@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_close_window ()</l>
+<c>*读取图片</c>
+<l>read_image (Image, 'E:/practice/halcon/HalconAlgorithm/OCR文字识别_神经网络训练/机票快递图片.jpg')</l>
+<l>dev_open_window_fit_image (Image, 0, 0, -1, -1, WindowHandle)</l>
+<l>* dev_display (Image)</l>
+<c>*转换图片到hsv空间</c>
+<l>decompose3 (Image, rchn, gchn, bchn)</l>
+<l>trans_from_rgb (rchn, gchn, bchn, hue, saturation, intensity, 'hsv')</l>
+<c></c>
+<c>*二值化分</c>
+<l>threshold (saturation, Regions, 0, 84)</l>
+<c>*膨胀后填充内部，方便特征筛选</c>
+<l>dilation_rectangle1 (Regions, RegionDilation, 5, 5)</l>
+<l>fill_up (RegionDilation, RegionFillUp)</l>
+<c>*分离连接件</c>
+<l>connection (RegionFillUp, ConnectedRegions)</l>
+<c>*特征过滤</c>
+<l>select_shape (ConnectedRegions, SelectedRegions, 'area', 'and', 2039.4, 72942.6)</l>
+<c>*联合后拟合矩形，找到旋转角度</c>
+<l>union1 (SelectedRegions, RegionUnion)</l>
+<l>shape_trans (RegionUnion, RegionTrans, 'rectangle2')</l>
+<l>orientation_region (RegionTrans, Phi)</l>
+<c>*找到旋转矩形</c>
+<l>area_center (RegionTrans, Area, Row, Column)</l>
+<l>vector_angle_to_rigid (Row, Column, Phi, Row, Column, rad(180), HomMat2D)</l>
+<c>*旋转后效果</c>
+<l>affine_trans_region (RegionTrans, RegionAffineTrans, HomMat2D, 'nearest_neighbor')</l>
+<l>affine_trans_image (saturation,ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
+<c>*裁剪出目标区域</c>
+<l>reduce_domain (ImageAffineTrans, RegionAffineTrans, ImageReduced)</l>
+<c>*二值化分</c>
+<l>threshold (ImageReduced, Regions1, 0, 89)</l>
+<c>*分离连接件</c>
+<l>connection (Regions1, ConnectedRegions1)</l>
+<c>*特征值选择出目标字体</c>
+<l>select_shape (ConnectedRegions1, SelectedRegions1, ['area','row1'], 'and', [430.17,0], [10000,1046.13])</l>
+<c>*膨胀连接字体本身</c>
+<l>dilation_circle (SelectedRegions1, RegionDilation1, 8)</l>
+<c>*联合后分离出单个的字</c>
+<l>union1 (RegionDilation1, RegionUnion1)</l>
+<l>* erosion_rectangle1 (RegionUnion1, RegionOpening, 20, 20)</l>
+<l>connection (RegionUnion1, ConnectedRegions2)</l>
+<c>*排序显示</c>
+<l>sort_region (ConnectedRegions2, SortedRegions, 'first_point', 'true', 'column')</l>
+<c>*创建空的容器，用于存放检索的字</c>
+<l>gen_empty_obj (wordsRegion)</l>
+<c>*将字放入容器中</c>
+<l>count_obj (SortedRegions, Number)</l>
+<l>for i:=1 to Number by 1</l>
+<c>    *选择单个字的region</c>
+<l>    select_obj (SortedRegions, ObjectSelected, i)</l>
+<c>    *与原图做交集，获得原图的字</c>
+<l>    intersection (Regions1,ObjectSelected,RegionIntersection)</l>
+<c>    *将原图的字放入容器中</c>
+<l>    insert_obj (wordsRegion,RegionIntersection, wordsRegion, i)</l>
+<l>endfor</l>
+<c></c>
+<c>*创建训练文件</c>
+<l>wordFile:='D:/word.trf'</l>
+<c>*将每个字存入训练文件</c>
+<l>words:=['机','票']</l>
+<l>* count_obj(wordsRegion, Number1)</l>
+<l>* for i := 1 to Number1 by 1</l>
+<l>*     select_obj (wordsRegion, singleWord, i)</l>
+<l>*     append_ocr_trainf (singleWord, ImageAffineTrans, words[i-1], wordFile)</l>
+<l>* endfor</l>
+<c>*采用批处理</c>
+<l>write_ocr_trainf (wordsRegion, ImageAffineTrans, words, wordFile)</l>
+<c></c>
+<c>*创建模板文件</c>
+<l>fontPatternFile:='D:/word.omc'</l>
+<c>*创建神经网络分类器</c>
+<l>create_ocr_class_mlp (10, 30, 'constant', 'default', words, 80, 'none', 10, 42, OCRHandle)</l>
+<c>*使用训练文件训练分类器</c>
+<l>trainf_ocr_class_mlp (OCRHandle, wordFile, 200, 1, 0.01, Error, ErrorLog)</l>
+<c>*保存训练的文件</c>
+<l>write_ocr_class_mlp (OCRHandle, fontPatternFile)</l>
+<c>*清除句柄</c>
+<l>clear_ocr_class_mlp (OCRHandle)</l>
+<c></c>
+<c>*使用训练好的模板进行文字识别</c>
+<l>read_ocr_class_mlp ('D:/word.omc', OCRHandle1)</l>
+<l>do_ocr_multi_class_mlp (wordsRegion, ImageReduced, OCRHandle1, Class, Confidence)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
