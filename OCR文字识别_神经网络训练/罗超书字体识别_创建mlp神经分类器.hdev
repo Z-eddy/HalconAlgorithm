@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_close_window ()</l>
+<c></c>
+<c>*分割图像</c>
+<c>*读取原图</c>
+<l>read_image (originalImage, 'E:/practice/halcon/HalconAlgorithm/OCR文字识别_神经网络训练/罗超书.jpg')</l>
+<c>*根据图像打开对应的窗口</c>
+<l>dev_open_window_fit_image (originalImage, 0, 0, -1, -1, WindowHandle)</l>
+<c>*转换为灰度图</c>
+<l>rgb1_to_gray (originalImage, GrayImage)</l>
+<c>*图像进行灰度缩放预处理</c>
+<l>scale_image (GrayImage, ImageScaled, 15.9375, -1371)</l>
+<c>*阈值分割</c>
+<l>threshold (ImageScaled, Regions, 0, 52)</l>
+<c>*分离连接件</c>
+<l>connection (Regions, ConnectedRegions)</l>
+<c>*特征筛选</c>
+<l>select_shape (ConnectedRegions, SelectedRegions, 'area', 'and', 311.72, 10000)</l>
+<c>*联合筛选出来的字</c>
+<l>union1 (SelectedRegions, RegionUnion)</l>
+<c>*拟合矩阵</c>
+<l>shape_trans (RegionUnion, rectangleTrans, 'rectangle2')</l>
+<c>*求取矩形的偏转角度</c>
+<l>orientation_region (rectangleTrans, Phi)</l>
+<c>*求取矩形的row/column</c>
+<l>area_center (rectangleTrans, Area, Row, Column)</l>
+<c>*根据矩形的偏转角度、row、column计算仿射的变换矩阵</c>
+<l>vector_angle_to_rigid (Row, Column, Phi, Row, Column, rad(180), HomMat2D)</l>
+<c>*根据放射矩阵变换</c>
+<l>affine_trans_region (rectangleTrans, RegionAffineTrans, HomMat2D, 'nearest_neighbor')</l>
+<l>affine_trans_image (originalImage, ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
+<c>*裁剪目标区域</c>
+<l>reduce_domain (ImageAffineTrans,RegionAffineTrans, ImageReduced)</l>
+<c>*找到文字的几个区域</c>
+<l>rgb1_to_gray (ImageReduced, GrayImage1)</l>
+<l>threshold (GrayImage1, Regions1, 0, 89)</l>
+<l>connection (Regions1, ConnectedRegions1)</l>
+<l>select_shape (ConnectedRegions1, SelectedRegions1, 'area', 'and', 311.72, 1000)</l>
+<l>sort_region (SelectedRegions1, SortedRegions, 'first_point', 'true', 'column')</l>
+<c></c>
+<c>*调用训练好的神经网络分类器进行识别</c>
+<l>read_ocr_class_mlp ('D:/wordTrain.omc',OCRHandle)</l>
+<l>do_ocr_multi_class_mlp (SortedRegions, ImageAffineTrans, OCRHandle, Class, Confidence)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
