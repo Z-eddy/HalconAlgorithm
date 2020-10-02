@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_close_window ()</l>
+<c></c>
+<c>*学习颜色模型</c>
+<c>*打开用于学习的图片</c>
+<l>read_image (origiImg,'C:/Users/Public/Documents/MVTec/HALCON-18.11-Progress/examples/images/color/color_pieces_00.png')</l>
+<c>*根据图片来进行窗口创建</c>
+<l>dev_open_window_fit_image (origiImg, 0, 0, -1, -1, WindowHandle)</l>
+<c>*创建容纳region的容器</c>
+<l>gen_empty_obj (roiRegions)</l>
+<c>*选择所有的目标区域</c>
+<l>colors:=['黄色','粉红','蓝色','背景色']</l>
+<l>for i:=1 to |colors| by 1</l>
+<l>    dev_display (origiImg)</l>
+<l>    disp_message (WindowHandle,'选择'+colors[i-1]+'的内部区域', 'image', 12, 12, 'black', 'false')</l>
+<l>    draw_rectangle1 (WindowHandle, Row1, Column1, Row2, Column2)</l>
+<l>    gen_rectangle1 (Rectangle, Row1, Column1, Row2, Column2)</l>
+<l>    concat_obj (Rectangle, roiRegions, roiRegions)</l>
+<l>endfor</l>
+<c>*对目标区域进行训练</c>
+<c>*创建mlp神经网络分类器</c>
+<l>create_class_mlp (3, 10, 4, 'softmax', 'normalization', 10, 42, MLPHandle)</l>
+<c>*将目标图给训练器</c>
+<l>add_samples_image_class_mlp (origiImg, roiRegions, MLPHandle)</l>
+<c>*训练</c>
+<l>train_class_mlp (MLPHandle, 200, 1, 0.01, Error, ErrorLog)</l>
+<c>*保存训练好的文件</c>
+<l>write_class_mlp (MLPHandle, 'F:/temp/colors.omc')</l>
+<c>*清理训练器</c>
+<l>clear_class_mlp (MLPHandle)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
