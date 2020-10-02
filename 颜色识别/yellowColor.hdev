@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_close_window ()</l>
+<c>*读取图片</c>
+<l>read_image(Image, 'C:/Users/Public/Documents/MVTec/HALCON-18.11-Progress/examples/images/cable1.png')</l>
+<c>*根据图片建立窗口</c>
+<l>dev_open_window_fit_image (Image, 0, 0, -1, -1, WindowHandle)</l>
+<c>*图像转入hsv色彩空间</c>
+<l>decompose3 (Image, redChn, greenChn, blueChn)</l>
+<l>trans_from_rgb (redChn, greenChn, blueChn, hueChn, saturationChn, intensityChn, 'hsv')</l>
+<c>*选出对比度最高的色彩空间进行二值化</c>
+<l>threshold (saturationChn, Regions, 122, 255)</l>
+<c>*按照轮廓对hue空间裁剪</c>
+<l>reduce_domain (hueChn, Regions, ImageReduced)</l>
+<c>*再次阈值分割,找到目标位置</c>
+<l>threshold (ImageReduced, Regions1, 21, 52)</l>
+<c>*断裂链接</c>
+<l>connection (Regions1, ConnectedRegions)</l>
+<c>*过滤其他小区域,max_area时无视最后的percent</c>
+<l>select_shape_std (ConnectedRegions, SelectedRegions, 'max_area', 0)</l>
+<c>*闭操作</c>
+<l>closing_circle (SelectedRegions, yelloRegion, 3.5)</l>
+<c>*裁剪出最终区域</c>
+<l>reduce_domain (Image,yelloRegion, dstImg)</l>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
