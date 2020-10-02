@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_close_window ()</l>
+<c>*打开图片</c>
+<l>read_image (Image, 'C:/Users/Public/Documents/MVTec/HALCON-18.11-Progress/examples/images/color/color_pieces_03.png')</l>
+<c>*根据图片创建窗口</c>
+<l>dev_open_window_fit_image (Image, 0, 0, -1, -1, WindowHandle)</l>
+<c></c>
+<c>*使用训练好的分类器进行识别</c>
+<c>*创建分类器的句柄</c>
+<l>read_class_mlp ('F:/temp/colors.omc',MLPHandle)</l>
+<c>*使用分类器</c>
+<l>classify_image_class_mlp (Image, ClassRegions, MLPHandle, 0.5)</l>
+<c></c>
+<l>select_shape (ClassRegions, SelectedRegions, 'area', 'and', 0, 120642)</l>
+<l>sort_region (SelectedRegions, SortedRegions, 'first_point', 'true', 'column')</l>
+<c>*选择对应的个数</c>
+<l>count_obj (SortedRegions, Number)</l>
+<l>for i := 1 to Number by 1</l>
+<l>    select_obj (SortedRegions, ObjectSelected, i)</l>
+<l>    dev_display (ObjectSelected)</l>
+<l>endfor</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

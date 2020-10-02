@@ -35,36 +35,16 @@
 <l>affine_trans_image (originalImage, ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
 <c>*裁剪目标区域</c>
 <l>reduce_domain (ImageAffineTrans,RegionAffineTrans, ImageReduced)</l>
-<c>*取得目标区域的字</c>
-<l>rgb1_to_gray (ImageReduced, roiGrayImage)</l>
-<l>* threshold (roiGrayImage, Regions1, 0, 73)</l>
-<l>threshold (roiGrayImage, Regions1, 0, 79)</l>
+<c>*找到文字的几个区域</c>
+<l>rgb1_to_gray (ImageReduced, GrayImage1)</l>
+<l>threshold (GrayImage1, Regions1, 0, 89)</l>
 <l>connection (Regions1, ConnectedRegions1)</l>
 <l>select_shape (ConnectedRegions1, SelectedRegions1, 'area', 'and', 311.72, 1000)</l>
 <l>sort_region (SelectedRegions1, SortedRegions, 'first_point', 'true', 'column')</l>
 <c></c>
-<c>*神经网络训练</c>
-<c></c>
-<c>*训练文件生成</c>
-<c>*创建训练文件路径</c>
-<l>trainFile:='D:/wordTrain.trf'</l>
-<c>*写入训练文件</c>
-<l>words:=['编','著','罗','超']</l>
-<l>write_ocr_trainf (SortedRegions, roiGrayImage, words, trainFile)</l>
-<c></c>
-<c>*进行训练并生成模板文件</c>
-<c>*创建模板文件路径</c>
-<l>fontPattern:='D:/wordTrain.omc'</l>
-<c>*创建神经网络分类器</c>
-<l>create_ocr_class_mlp (10, 30, 'constant', 'default', words, 80, 'none', 10, 42, OCRHandle)</l>
-<c>*用训练文件对分类器进行训练</c>
-<l>trainf_ocr_class_mlp (OCRHandle, trainFile, 200, 1, 0.01, Error, ErrorLog)</l>
-<c>*保存训练好的模板文件</c>
-<l>write_ocr_class_mlp (OCRHandle, fontPattern)</l>
-<c>*清理神经网络分类器句柄</c>
-<l>clear_ocr_class_mlp (OCRHandle)</l>
-<c></c>
-<c></c>
+<c>*调用训练好的神经网络分类器进行识别</c>
+<l>read_ocr_class_mlp ('D:/wordTrain.omc',OCRHandle)</l>
+<l>do_ocr_multi_class_mlp (SortedRegions, ImageAffineTrans, OCRHandle, Class, Confidence)</l>
 </body>
 <docu id="main">
 <parameters/>
