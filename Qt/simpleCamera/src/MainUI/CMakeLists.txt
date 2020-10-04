@@ -51,14 +51,14 @@ file(GLOB Cpps *.cpp)
 file(GLOB UIs *.ui)
 file(GLOB Src *.qrc)
 if(ANDROID)
-  add_library(MainUI SHARED
+  add_library(${PROJECT_NAME} SHARED
     ${Headers}
     ${Cpps}
     ${UIs}
     ${Src}
   )
 else()
-  add_executable(MainUI
+  add_executable(${PROJECT_NAME} 
     ${Headers}
     ${Cpps}
     ${UIs}

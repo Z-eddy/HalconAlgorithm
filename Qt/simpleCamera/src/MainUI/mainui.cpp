@@ -82,7 +82,7 @@ void MainUI::on_btnStart_clicked() {
     // write_string会输出dev_set_color的颜色的字
     auto v{time.elapsed()};
     WriteString(hv_WindowHandle,
-                "有" + hv_Numb + "个特别亮的目标\n" + "fps:" + 1000 / v);
+                "有" + hv_Numb + "个特别亮的目标" + "fps:" + 1000 / v);
     // disp_message (WindowHandle, '有'+Numb+'个目标啊', 'window', 12, 12,
     // 'yellow', 'false') 设置目标颜色为多彩色(12)
     if (HDevWindowStack::IsOpen()) SetColored(HDevWindowStack::GetActive(), 12);
