@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*用机械手绘制9个坐标点，并记录</c>
+<l>columns:=[1,2,3,4,5,6,7,8,9]</l>
+<l>rows:=[1,2,3,4,5,6,7,8,9]</l>
+<c>*使用相机对照片拍照，找到每个点的中心点</c>
+<l>area_center (Regions, Area, Row, Column)</l>
+<c>*进行仿射变换，找到变化的矩阵</c>
+<l>vector_to_hom_mat2d (Row, Column, rows, columns, HomMat2D)</l>
+<c></c>
+<c>*将图片的坐标点转换到机械手的坐标，注意column-&gt;x，row-&gt;y</c>
+<l>affine_trans_point_2d (HomMat2D, theColumn, theRow, Qx, Qy)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

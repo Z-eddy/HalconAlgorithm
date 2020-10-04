@@ -3,7 +3,7 @@
 <procedure name="main">
 <interface/>
 <body>
-<c></c>
+<l>cooc_feature_image (, , 6, 0, Energy, Correlation, Homogeneity, Contrast)</l>
 </body>
 <docu id="main">
 <parameters/>
