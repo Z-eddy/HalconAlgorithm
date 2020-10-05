@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<l>read_image (Image, 'C:/Users/Public/Documents/MVTec/HALCON-18.11-Progress/examples/images/circular_barcode.png')</l>
+<c>*旋转到字在左边(也可以不旋转,指定极坐标转换的弧度坐标)</c>
+<l>rotate_image (Image, ImageRotate, 180, 'constant')</l>
+<c>*阈值分割</c>
+<l>threshold (ImageRotate, Regions, 0, 96)</l>
+<c>*断开链接</c>
+<l>connection (Regions, ConnectedRegions)</l>
+<c>*选择目标区域环</c>
+<l>select_shape (ConnectedRegions, SelectedRegions, ['width','height'], 'and', [600.19,401.67], [1000,1000])</l>
+<c>*找到外接圆</c>
+<l>* shape_trans (SelectedRegions, RegionTrans, 'outer_circle')</l>
+<l>smallest_circle (SelectedRegions, Row, Column, outRadius)</l>
+<c>*求补集得到内接圆</c>
+<l>complement (SelectedRegions, RegionComplement)</l>
+<c>*获得内接圆</c>
+<l>connection (RegionComplement, ConnectedRegions1)</l>
+<l>select_shape (ConnectedRegions1, SelectedRegions1, 'width', 'and', 384.04, 996.29)</l>
+<l>smallest_circle (SelectedRegions1, Row1, Column1, inRadius)</l>
+<c>*极坐标转换</c>
+<l>barWidth:=1600</l>
+<l>barHeight:=outRadius-inRadius-10</l>
+<l>polar_trans_image_ext (ImageRotate, PolarTransImage, Row, Column, rad(360), 0, outRadius-10, inRadius+10, barWidth, barHeight, 'nearest_neighbor')</l>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
