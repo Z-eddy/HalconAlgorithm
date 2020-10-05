@@ -3,7 +3,7 @@
 <procedure name="main">
 <interface/>
 <body>
-<l>cooc_feature_image (, , 6, 0, Energy, Correlation, Homogeneity, Contrast)</l>
+<l>gen_caltab (7, 7, 0.0125, 0.5, 'caltab.descr', 'caltab.ps')</l>
 </body>
 <docu id="main">
 <parameters/>
