@@ -4,34 +4,23 @@
 <interface/>
 <body>
 <l>dev_close_window ()</l>
-<l>read_image (origiImage, 'C:/Users/Public/Documents/MVTec/HALCON-18.11-Progress/examples/images/dot_print_rotated/dot_print_rotated_02.png')</l>
-<c>*用一个矩形框把目标检测区域圈出来</c>
-<l>gen_rectangle1 (textRoi, 57.8893, 19.7151, 458.963, 612.403)</l>
-<c>*对目标区判定字的倾斜角度</c>
-<l>text_line_orientation (textRoi, origiImage, 25, -0.523599, 0.523599, textOrientationAngle)</l>
-<c>*将图片转回来</c>
-<l>area_center (textRoi, Area, Row, Column)</l>
-<l>vector_angle_to_rigid (Row, Column, textOrientationAngle, Row, Column, 0, HomMat2D)</l>
+<l>read_image (origiImage, 'C:/Users/Public/Documents/MVTec/HALCON-18.11-Progress/examples/images/ocr/dot_print_03.png')</l>
+<l>gen_rectangle1 (ROI_0, 112, 36, 420, 576)</l>
+<l>text_line_orientation (ROI_0, origiImage, 25, -0.523599, 0.523599, OrientationAngle)</l>
+<l>area_center (ROI_0, Area, Row, Column)</l>
+<l>vector_angle_to_rigid (Row, Column, OrientationAngle, Row, Column, 0, HomMat2D)</l>
 <l>affine_trans_image (origiImage, ImageAffineTrans, HomMat2D, 'constant', 'false')</l>
-<c>*识别点状文字</c>
-<l>dots_image (ImageAffineTrans, DotImage, 5, 'dark', 0)</l>
-<c>*自动阈值分割</c>
-<l>binary_threshold (DotImage, Region, 'max_separability', 'light', UsedThreshold)</l>
-<c>*膨胀</c>
-<l>dilation_rectangle1 (Region, RegionDilation, 10, 10)</l>
-<c>*断开链接</c>
-<l>connection (RegionDilation, ConnectedRegions)</l>
-<c>*特征值筛选</c>
-<l>select_shape (ConnectedRegions, SelectedRegions, 'height', 'and', 38.99, 100.46)</l>
-<c>*交集</c>
-<l>intersection (SelectedRegions, Region, RegionIntersection)</l>
-<c>*排序</c>
-<l>sort_region (RegionIntersection, SortedRegions, 'character', 'true', 'row')</l>
-<c>*读取ocr mlp分类器</c>
-<l>read_ocr_class_mlp ('DotPrint_Rej.omc', OCRHandle)</l>
-<c>*使用分类器获得</c>
-<l>invert_image (DotImage, ImageInvert)</l>
-<l>do_ocr_multi_class_mlp (SortedRegions, ImageInvert, OCRHandle, Class, Confidence)</l>
+<c>*创建文字读取model</c>
+<l>create_text_model_reader ('auto', 'DotPrint_Rej.omc', TextModel)</l>
+<c>*设置为读取点状文字</c>
+<l>set_text_model_param (TextModel, 'dot_print', 'true')</l>
+<c>*查找</c>
+<l>find_text (ImageAffineTrans, TextModel, TextResultID)</l>
+<c>*获得项</c>
+<l>get_text_object (Characters, TextResultID, 'all_lines')</l>
+<c>*获得结果</c>
+<l>get_text_result (TextResultID, 'num_lines', lineNum)</l>
+<l>get_text_result (TextResultID, 'class', ResultValue)</l>
 </body>
 <docu id="main">
 <parameters/>
