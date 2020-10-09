@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*读入待测图像</c>
+<l>read_image (origImg, 'C:/Users/Public/Documents/MVTec/HALCON-18.11-Progress/examples/images/fuse.png')</l>
+<c>*根据图像创建窗口</c>
+<l>dev_open_window_fit_image (origImg, 0, 0, -1, -1, WindowHandle)</l>
+<l>dev_display (origImg)</l>
+<l>dev_set_draw ('margin')</l>
+<c>*手动生成矩形,是区域助手生成后抄的数值</c>
+<l>row:=292</l>
+<l>column:=551</l>
+<l>angle:=rad(-90)</l>
+<l>width:=82.0061</l>
+<l>height:=11.0114</l>
+<l>gen_rectangle2 (origiRect, row, column, angle, width, height)</l>
+<c>*根据手绘的矩形,绘制测量矩形</c>
+<l>get_image_size (origImg, imgWidth, imgHeight)</l>
+<l>gen_measure_rectangle2 (row,column,angle,width,height,imgWidth, imgHeight, 'nearest_neighbor', MeasureHandle)</l>
+<c>*进行测量</c>
+<l>measure_pairs (origImg, MeasureHandle, 1, 30, 'all', 'all', RowEdgeFirst, ColumnEdgeFirst, AmplitudeFirst, RowEdgeSecond, ColumnEdgeSecond, AmplitudeSecond, IntraDistance, InterDistance)</l>
+<c>*显示测量结果,需要用到xld!</c>
+<l>close_measure (MeasureHandle)</l>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
