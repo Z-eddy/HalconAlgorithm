@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*读入图像</c>
+<l>read_image (origImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/woodboard.jpg')</l>
+<c>*根据图像打开窗口</c>
+<l>dev_open_window_fit_image (origImg, 0, 0, -1, -1, WindowHandle)</l>
+<l>dev_display (origImg)</l>
+<c>*转化灰度图</c>
+<l>rgb1_to_gray (origImg, GrayImage)</l>
+<c>*高斯平滑</c>
+<l>gauss_filter (GrayImage, ImageGauss, 11)</l>
+<c>*分水岭分割</c>
+<l>watersheds (ImageGauss, Basins, Watersheds)</l>
+<c>*提取盆地区域</c>
+<l>watersheds_threshold (ImageGauss, Basins1, 50)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
