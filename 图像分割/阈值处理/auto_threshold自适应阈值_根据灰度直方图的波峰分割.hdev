@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*读取图片</c>
+<l>read_image (origImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/shapes.jpg')</l>
+<c>*根据图像打开窗口</c>
+<l>dev_open_window_fit_image (origImg, 0, 0, -1, -1, WindowHandle)</l>
+<l>dev_display (origImg)</l>
+<c>*灰度转换</c>
+<l>rgb1_to_gray (origImg, GrayImage)</l>
+<c>*对灰度图进行自动阈值处理</c>
+<l>auto_threshold (GrayImage, Regions, 8.0)</l>
+<c></c>
+<c>*显示直方图</c>
+<c>*原图的直方图</c>
+<l>dev_open_window (0, 0, 512, 512, 'black', WindowHandle1)</l>
+<l>gray_histo (GrayImage,GrayImage,AbsoluteHisto, RelativeHisto)</l>
+<l>dev_set_color ('red')</l>
+<l>gen_region_histo (Region, AbsoluteHisto, 255, 5, 1)</l>
+<c>*平滑后的直方图</c>
+<l>dev_set_color ('green')</l>
+<l>create_funct_1d_array (AbsoluteHisto, Function)</l>
+<l>smooth_funct_1d_gauss (Function, 8, SmoothedFunction)</l>
+<l>funct_1d_to_pairs (SmoothedFunction, XValues, YValues)</l>
+<l>gen_region_histo (Region1, YValues, 255, 5, 1)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
