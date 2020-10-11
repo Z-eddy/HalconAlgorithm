@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*读取图片</c>
+<l>read_image (origImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/village.jpg')</l>
+<c>*根据图片打开窗口</c>
+<l>dev_open_window_fit_image (origImg, 0, 0, -1, -1, WindowHandle)</l>
+<l>dev_display (origImg)</l>
+<c>*中值滤波</c>
+<l>median_image (origImg, ImageMedian, 'circle', 2, 'mirrored')</l>
+<c>*区域增长</c>
+<l>regiongrowing (ImageMedian, Regions, 1, 1, 3, 500)</l>
+<c>*形状拟合</c>
+<l>shape_trans (Regions, RegionTrans, 'inner_center')</l>
+<c>*断开连接</c>
+<l>connection (RegionTrans, ConnectedRegions)</l>
+<c>*计算区域中心坐标</c>
+<l>area_center (ConnectedRegions, Area, Row, Column)</l>
+<c>*多点区域增长</c>
+<l>regiongrowing_mean (ImageMedian, Regions1, Row, Column, 25, 100)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
