@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*读取图片</c>
+<l>read_image (origImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/crossShape.jpg')</l>
+<c>*根据图片打开窗口</c>
+<l>dev_open_window_fit_image (origImg, 0, 0, -1, -1, WindowHandle)</l>
+<l>dev_display (origImg)</l>
+<c>*灰度图转化</c>
+<l>rgb1_to_gray (origImg, GrayImage)</l>
+<c>*指定矩形裁剪区域</c>
+<l>gen_rectangle1 (ROI_0, 134, 152, 325, 476)</l>
+<c>*裁剪</c>
+<l>reduce_domain (GrayImage, ROI_0, ImageReduced)</l>
+<c>*感觉没有用的清除指定区域的图像，可能用来初始化</c>
+<l>* gen_image_proto (ImageReduced, ImageCleared, 0)</l>
+<c>*阈值分割</c>
+<l>threshold (ImageReduced, Regions, 29, 234)</l>
+<c>*断开连接</c>
+<l>connection (Regions, ConnectedRegions)</l>
+<c>*选择最大的面积</c>
+<l>select_shape_std (ConnectedRegions, SelectedRegions, 'max_area', 70)</l>
+<c>*显示面积大小</c>
+<l>area_center (SelectedRegions, Area, Row, Column)</l>
+<l>set_display_font (WindowHandle, 20, 'mono', 'false', 'false')</l>
+<l>disp_message (WindowHandle, '计算出的面积为：'+Area+'像素', 'window', 12, 12, 'green', 'false')</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
