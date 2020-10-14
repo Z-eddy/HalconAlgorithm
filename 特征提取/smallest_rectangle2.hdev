@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*打开图像</c>
+<l>read_image (origImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/garlic2.jpg')</l>
+<c>*根据图像打开窗口</c>
+<l>dev_open_window_fit_image (origImg, 0, 0, -1, -1, WindowHandle)</l>
+<l>dev_display (origImg)</l>
+<c>*灰度图</c>
+<l>rgb1_to_gray (origImg, GrayImage)</l>
+<c>*均值滤波</c>
+<l>mean_image (GrayImage, ImageMean, 50, 50)</l>
+<c>*动态阈值</c>
+<l>dyn_threshold (GrayImage, ImageMean, RegionDynThresh, 5, 'light')</l>
+<c>*开操作</c>
+<l>opening_circle (RegionDynThresh, RegionOpening, 1.5)</l>
+<c>*断开连接</c>
+<l>connection (RegionOpening, ConnectedRegions)</l>
+<c>*选择最大面积</c>
+<l>select_shape_std (ConnectedRegions, SelectedRegions, 'max_area', 70)</l>
+<c>*最小外接矩形</c>
+<l>smallest_rectangle2 (SelectedRegions, Row, Column, Phi, Length1, Length2)</l>
+<c>*绘制</c>
+<l>gen_rectangle2_contour_xld (Rectangle, Row, Column, Phi, Length1, Length2)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

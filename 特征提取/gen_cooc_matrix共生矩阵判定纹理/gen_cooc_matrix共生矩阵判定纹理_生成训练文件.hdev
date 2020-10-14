@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*批量读取图片</c>
+<l>list_image_files ('picture', 'default', [], ImageFiles)</l>
+<l>create_class_mlp (4, 10, 3, 'softmax', 'normalization', 10, 42, MLPHandle)</l>
+<c>*处理每张图片</c>
+<l>for i:=0 to |ImageFiles|-1 by 1</l>
+<c>    *读取图片</c>
+<l>    read_image (treeImg,ImageFiles[i])</l>
+<c>    *灰度化</c>
+<l>    rgb1_to_gray (treeImg, GrayImage)</l>
+<c>    *共生矩阵</c>
+<l>    cooc_feature_image (GrayImage, GrayImage, 6, 0, Energy, Correlation, Homogeneity, Contrast)</l>
+<c>    *获得特性组</c>
+<l>    featureVec:=[Energy, Correlation, Homogeneity, Contrast]</l>
+<c>    *训练特性</c>
+<l>    add_sample_class_mlp (MLPHandle, featureVec, i)</l>
+<l>endfor</l>
+<c>*训练</c>
+<l>train_class_mlp (MLPHandle, 200, 1, 0.01, Error, ErrorLog)</l>
+<c>*保存训练的文件</c>
+<l>write_class_mlp (MLPHandle, 'train.omc')</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
