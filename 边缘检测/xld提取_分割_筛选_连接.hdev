@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*读入图像</c>
+<l>read_image (origImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/shapes.jpg')</l>
+<c>*根据图像打开窗口</c>
+<l>dev_open_window_fit_image (origImg, 0, 0, -1, -1, WindowHandle)</l>
+<l>dev_display (origImg)</l>
+<c>*转化灰度图</c>
+<l>rgb1_to_gray (origImg, GrayImage)</l>
+<c>*提取亚像素轮廓</c>
+<l>edges_sub_pix (GrayImage, Edges, 'canny', 2.5, 20, 40)</l>
+<c>*分割xld</c>
+<l>segment_contours_xld (Edges, ContoursSplit, 'lines_circles', 5, 4, 2)</l>
+<c>*选择xld</c>
+<l>select_shape_xld (ContoursSplit, SelectedXLD, 'contlength', 'and', 20, 200)</l>
+<c>*连接</c>
+<l>union_adjacent_contours_xld (ContoursSplit, UnionContours, 20, 1, 'attr_keep')</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
