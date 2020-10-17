@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*读入图片</c>
+<l>read_image (origImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/labelShape-1.jpg')</l>
+<c>*根据图像打开窗口</c>
+<l>dev_open_window_fit_image (origImg, 0, 0, -1, -1, WindowHandle)</l>
+<l>dev_display (origImg)</l>
+<c>*读入模板</c>
+<l>read_shape_model ('test.shm',ModelID)</l>
+<c>*匹配模板</c>
+<l>find_shape_model (origImg, ModelID, 0, rad(360), 0.5, 1, 0.5, 'least_squares', 0, 0.9, Row, Column, Angle, Score)</l>
+<c>*显示</c>
+<l>dev_display_shape_matching_results (ModelID, 'red', Row, Column, Angle, 1, 1, 0)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
