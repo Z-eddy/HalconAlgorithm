@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_close_window ()</l>
+<c>*读取参考图像，这里的参考图像应只包含识别的关键区域，用于创建模板</c>
+<l>read_image (ImageLabel, 'data/labelShape-0')</l>
+<c>*设置窗口参数用于显示图像</c>
+<l>get_image_size (ImageLabel, Width, Height)</l>
+<l>dev_open_window (0, 0, Width, Height, 'black', WindowHandle1)</l>
+<l>dev_set_draw ('margin')</l>
+<l>dev_display (ImageLabel)</l>
+<c>*设置用于存储特征点和感兴趣区域的变量</c>
+<l>NumPoints := []</l>
+<l>RowRoi := [10,10,Height - 10,Height - 10]</l>
+<l>ColRoi := [10,Width - 10,Width - 10,10]</l>
+<c>*将参考图像中的除边缘外的区域都设为感兴趣区域。因为参考图像已经近似于匹配的纹理样本</c>
+<l>gen_rectangle1 (Rectangle, 10, 10, Height - 10, Width - 10)</l>
+<c>*显示参考图像上选择的ROI区域</c>
+<l>dev_set_line_width (4)</l>
+<l>dev_display (Rectangle)</l>
+<l>stop ()</l>
+<c>*将感兴趣区域剪裁为模板图像</c>
+<l>reduce_domain (ImageLabel, Rectangle, ImageReduced)</l>
+<l>dev_clear_window ()</l>
+<l>dev_display (ImageLabel)</l>
+<c>*创建基于描述符的模板</c>
+<l>create_uncalib_descriptor_model (ImageReduced, 'harris_binomial', [], [], ['min_rot','max_rot','min_scale','max_scale'], [-90,90,0.2,1.1], 42, ModelID)</l>
+<c>*设置模型的原点，为了后面获取坐标作参照</c>
+<l>set_descriptor_model_origin (ModelID, -Height / 2, -Width / 2)</l>
+<c>*获取模型中特征点的位置</c>
+<l>get_descriptor_model_points (ModelID, 'model', 'all', Row_D, Col_D)</l>
+<c>*将模型中计算出的特征点存入NumPoints变量中</c>
+<l>NumPoints := [NumPoints,|Row_D|]</l>
+<c></c>
+<c>*读取测试图像，这里读取的是单通道灰度图像，因此省略了通道转化的步骤</c>
+<l>read_image (ImageGray, 'data/labelShape-1')</l>
+<l>dev_resize_window_fit_image (ImageGray, 0, 0, -1, -1)</l>
+<l>dev_display (ImageGray)</l>
+<c>*对描述符特征点进行匹配</c>
+<l>find_uncalib_descriptor_model (ImageGray, ModelID, 'threshold', 800, ['min_score_descr','guided_matching'], [0.003,'on'], 0.25, 1, 'num_points', HomMat2D, Score)</l>
+<c>*显示匹配结果，将特征点用不同的颜色绘制出来</c>
+<l>if ((|HomMat2D| &gt; 0) and (Score &gt; NumPoints[0] / 4))</l>
+<l>    get_descriptor_model_points (ModelID, 'search', 0, Row, Col)</l>
+<c>	*创建十字标识符</c>
+<l>    gen_cross_contour_xld (Cross, Row, Col, 6, 0.785398)</l>
+<l>    projective_trans_region (Rectangle, TransRegion, HomMat2D, 'bilinear')</l>
+<l>    projective_trans_pixel (HomMat2D, RowRoi, ColRoi, RowTrans, ColTrans)</l>
+<l>    angle_ll (RowTrans[2], ColTrans[2], RowTrans[1], ColTrans[1], RowTrans[1], ColTrans[1], RowTrans[0], ColTrans[0], Angle)</l>
+<l>    Angle := deg(Angle)</l>
+<l>    if (Angle &gt; 70 and Angle &lt; 110)</l>
+<l>        area_center (TransRegion, Area, Row, Column)</l>
+<l>        dev_set_color ('green')</l>
+<l>        dev_set_line_width (4)</l>
+<l>        dev_display (TransRegion)</l>
+<l>        dev_set_colored (6)</l>
+<l>        dev_display (Cross)                </l>
+<l>   endif</l>
+<l>endif</l>
+<l>stop ()</l>
+<c>*匹配结束，释放模板资源</c>
+<l>clear_descriptor_model (ModelID)</l>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
