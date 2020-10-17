@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*读入图片</c>
+<l>read_image (origImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/creamlabel.jpg')</l>
+<c>*根据图像打开窗口</c>
+<l>dev_open_window_fit_image (origImg, 0, 0, -1, -1, WindowHandle)</l>
+<l>dev_display (origImg)</l>
+<c>*寻找合适的参数</c>
+<l>determine_deformable_model_params (origImg, 'auto', 0, rad(360), 0.9, 1.1, 'auto', 'use_polarity', 'auto', 'auto', [], [], 'all', ParameterName, ParameterValue)</l>
+<c>*创建模板</c>
+<l>create_local_deformable_model (origImg, 'auto', 0, rad(360), 'auto', 1, 1, 'auto', 1, 1, 'auto', 'none', 'use_polarity', 'auto', 'auto', [], [], ModelID)</l>
+<c></c>
+<c>*显示轮廓</c>
+<c>*获得局部变形模板的轮廓</c>
+<l>get_deformable_model_contours (ModelContours, ModelID, 1)</l>
+<c>*求取几何中心</c>
+<l>area_center (origImg,Area, Row, Column)</l>
+<c>*仿射变换</c>
+<l>hom_mat2d_identity (HomMat2DIdentity)</l>
+<l>hom_mat2d_translate (HomMat2DIdentity, Row, Column, HomMat2DTranslate)</l>
+<l>affine_trans_contour_xld (ModelContours, ContoursAffineTrans, HomMat2DTranslate)</l>
+<c></c>
+<c>*读入图像</c>
+<l>read_image(dstImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/cream.jpg')</l>
+<c>*根据新图像改变窗口</c>
+<l>dev_resize_window_fit_image (dstImg, 0, 0, -1, -1)</l>
+<c>*灰度化</c>
+<l>rgb1_to_gray (dstImg, GrayImage)</l>
+<c>*使用局部形变模板匹配</c>
+<l>find_local_deformable_model (dstImg, ImageRectified, VectorField, DeformedContours, ModelID, 0, rad(360), 0.9, 1, 0.9, 1, 0.5, 0, 0, 0, 0.9, 'deformed_contours', 'subpixel', 'least_squares', Score, Row1, Column1)</l>
+<l>dev_display (dstImg)</l>
+<l>dev_display(DeformedContours)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
