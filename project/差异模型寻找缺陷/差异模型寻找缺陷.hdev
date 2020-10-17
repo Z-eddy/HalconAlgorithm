@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.1" halcon_version="12.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>*清空显示窗口。</c>
+<l>dev_close_window ()</l>
+<c>*读取参考图像。这里读取图像是为了创建模板。</c>
+<l>read_image (Image, 'data/pen01')</l>
+<c>*因为参考图像因为拍摄的原因会有一些噪声，因此使用均值滤波对图像进行平滑。</c>
+<c></c>
+<l>mean_image (Image, ImageMean, 3, 3)</l>
+<c>*获取图像的宽和高用于窗口显示</c>
+<l>get_image_size (Image, Width, Height)</l>
+<c>*设置窗口显示参数，包括设置绘制线条的颜色和线宽等</c>
+<l>dev_close_window ()</l>
+<l>dev_open_window (0, 0, Width, Height, 'black', WindowHandle)</l>
+<l>dev_set_color ('red')</l>
+<l>dev_display (Image)</l>
+<l>dev_set_draw ('margin')</l>
+<l>dev_set_line_width(3)</l>
+<c></c>
+<c>*对原图进行阈值分割，粗略的提取出印刷图案的区域</c>
+<l>threshold (ImageMean, Region, 0, 42)</l>
+<c>*对印刷图案区域做一定的膨胀，使选区完全包围印刷图案部分</c>
+<l>dilation_circle (Region, RegionDilation, 8.5)</l>
+<c>*将选择转化为包围的形状</c>
+<l>shape_trans (RegionDilation, RegionTrans, 'convex')</l>
+<c>*将形状区域作为感兴趣区域从原图中分割出来</c>
+<l>reduce_domain (ImageMean, RegionTrans, ImageReduced)</l>
+<c></c>
+<c>*检查形状模板参数，为后续的形状模板匹配检查合适的层级参数。</c>
+<c>*这里只用了1层的金字塔图像，因为该形状已经可以满足检测的需求了</c>
+<l>inspect_shape_model (ImageReduced, ModelImages, ModelRegions, 1, 20)</l>
+<c>*创建形状的轮廓，为了显示形状便于检查形状选择的是否完整</c>
+<l>gen_contours_skeleton_xld (ModelRegions, Model, 1, 'filter')</l>
+<c>*获取图像的面积和几何中心点坐标</c>
+<l>area_center (RegionTrans, Area, RowRef, ColumnRef)</l>
+<c>*创建形状模板。</c>
+<c>*金字塔层级为。因为测试图像与参考图像在光照，坐标方面的变化比较小，因此按默认值设置即可</c>
+<l>create_shape_model (ImageReduced, 1, rad(-10), rad(10), 'auto', 'none', 'use_polarity', 20, 10, ShapeModelID)</l>
+<c>*创建一个用于对比的差异模型，返回模型句柄VariationModelID</c>
+<l>create_variation_model (Width, Height, 'byte', 'standard', VariationModelID)</l>
+<c></c>
+<c>*使用良品的训练图像对检查模板进行训练。</c>
+<c>*其中为了将各个图像进行对齐，避免可能的位移和旋转，先对图像做个仿射变换。</c>
+<c>*然后使用对变换后的良品图像进行训练，得到良品的检查模板。</c>
+<l>for Num := 1 to 2 by 1</l>
+<l>	read_image (Image, 'data/pen0' + Num)</l>
+<l>	find_shape_model (Image, ShapeModelID, rad(-10), rad(20), 0.5, 1, 0.5, 'least_squares', 0, 0.9, Row, Column, Angle, Score)</l>
+<l>	if (|Score| == 1)</l>
+<l>		vector_angle_to_rigid (Row, Column, Angle, RowRef, ColumnRef, 0, HomMat2D)</l>
+<l>  		affine_trans_image (Image, ImageTrans, HomMat2D, 'constant', 'false')</l>
+<l>    		train_variation_model (ImageTrans, VariationModelID)</l>
+<l>   		dev_display (Model)</l>
+<l>	endif</l>
+<l>endfor</l>
+<c></c>
+<c>*准备检查模板。设置两个阈值AbsThreshold, VarThreshold。</c>
+<c>*前者定义了检测图像与检查模板的灰度差的绝对值的允许阈值。</c>
+<c>*后者定义了与理想图像的差异程度</c>
+<l>prepare_variation_model (VariationModelID, 20, 2)</l>
+<c>*读取待检测的图像，这里开始正式检测。</c>
+<c>*也可以连接相机进行拍摄，图像如果是彩色的，需要转换为单通道图像。 </c>
+<l>stop()</l>
+<l>for Num := 1 to 3 by 1</l>
+<l>read_image (Image2, 'data/pen'+Num)</l>
+<c>*进行模板匹配。寻找图中的形状</c>
+<l>find_shape_model (Image2, ShapeModelID, rad(-10), rad(20), 0.5, 1, 0.5, 'least_squares', 4, 0.9, Row, Column, Angle, Score)</l>
+<l>if (|Score| == 1)</l>
+<c>	*如果匹配成功，现将图像进行仿射变换用于和模板对齐。	    				vector_angle_to_rigid (Row, Column, Angle, RowRef, ColumnRef, 0, HomMat2D)</c>
+<l>    vector_angle_to_rigid (Row, Column, Angle, RowRef, ColumnRef, 0, HomMat2D)	</l>
+<l>    affine_trans_image (Image2, ImageTrans2, HomMat2D, 'constant', 'false')</l>
+<c>	*然后裁剪出感兴趣区域。对后面的比对做准备</c>
+<l>	reduce_domain (ImageTrans2, RegionTrans, ImageReduced2)</l>
+<c>	*将裁剪后的感兴趣区域图像与检查模板图像进行比对。提取出有差异的部分</c>
+<l>	compare_variation_model (ImageReduced2, RegionDiff, VariationModelID)</l>
+<c>	*将差异部分的区域分割开来</c>
+<l>	connection (RegionDiff, ConnectedRegions)</l>
+<c>	*对差异图像区域进行筛选，根据差异的面积排除掉极微小的无意义的差别部分。</c>
+<l>	select_shape (ConnectedRegions, RegionsError, 'area', 'and', 20, 1000000)</l>
+<c>	*计算提取出的差异的个数，作为缺陷数量。这是为了判别最终结果</c>
+<l>	count_obj (RegionsError, NumError)</l>
+<c>	*将缺陷部位标记出来。如果是良品，则显示的是没有标记的测试图像</c>
+<l>	dev_clear_window ()</l>
+<l>	dev_display (ImageTrans2)</l>
+<l>	dev_display (RegionsError)</l>
+<c>	*打印结果。</c>
+<c>	*如果结果为0，可以认为是良品，没有发生缺陷</c>
+<c>	*如果缺陷个数不为0，则认为是次品</c>
+<l>	set_tposition (WindowHandle, 20, 20)</l>
+<l>	if (NumError == 0)</l>
+<l>		write_string (WindowHandle, 'OK')</l>
+<l>	else</l>
+<l>		write_string (WindowHandle, 'Not OK')</l>
+<l>	endif</l>
+<l>endif</l>
+<l>stop()</l>
+<l>endfor</l>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
