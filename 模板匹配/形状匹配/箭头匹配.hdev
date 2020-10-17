@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*关闭窗口</c>
+<l>dev_close_window ()</l>
+<c>*读入图像</c>
+<l>read_image (origImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/arrow1.jpg')</l>
+<c>*根据图像打开窗口</c>
+<l>dev_open_window_fit_image (origImg, 0, 0, -1, -1, WindowHandle)</l>
+<l>dev_display (origImg)</l>
+<c>*获得ROI</c>
+<l>gen_rectangle1 (ROI_0, 288.47, 172.11, 434.73, 305.651)</l>
+<c>*裁剪</c>
+<l>reduce_domain (origImg, ROI_0, ImageReduced)</l>
+<c>*显示金字塔看看而已</c>
+<l>inspect_shape_model (ImageReduced, ModelImages, ModelRegions, 4, 30)</l>
+<c>*创建形状模板</c>
+<l>create_shape_model (ImageReduced, 'auto', -0.39, 0.79, 'auto', 'auto', 'use_polarity', 'auto', 'auto', ModelID)</l>
+<c></c>
+<c>*打开图片</c>
+<l>read_image (dstImg,'E:/practice/halcon/material/halcon机器视觉算法原理与编程实践/code/data/arrow2.jpg')</l>
+<c>*寻找</c>
+<l>find_shape_model (dstImg, ModelID, -0.39, 0.79, 0.5, 1, 0.5, 'least_squares', 0, 0.9, Row, Column, Angle, Score)</l>
+<c>*显示</c>
+<l>* get_shape_model_contours (ModelContours, ModelID, 1)</l>
+<l>* vector_angle_to_rigid (0, 0, 0, Row, Column, Angle, HomMat2D)</l>
+<l>* affine_trans_contour_xld (ModelContours, ContoursAffineTrans, HomMat2D)</l>
+<l>dev_display_shape_matching_results (ModelID, 'red', Row, Column, Angle, 1, 1, 0)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
