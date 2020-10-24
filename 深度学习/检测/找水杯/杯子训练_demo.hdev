@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="20.05.0.0">
+<procedure name="main">
+<interface/>
+<body>
+<l>dev_close_window ()</l>
+<l>dev_update_off ()</l>
+<l>set_system ('seed_rand', 42)</l>
+<c>* </c>
+<c>* 路径设置</c>
+<l>rootDir:='E:/practice/halcon/自己的杯子检测/'</l>
+<l>InputImageDir := rootDir + '/images/'</l>
+<l>PreprocessingOutputDir := rootDir+'detect_raw_data'</l>
+<c>*删除中间文件</c>
+<l>RemoveResults := false</l>
+<c>* 读取字典</c>
+<l>read_dict (rootDir+'labels.hdict', [], [], DLDataset)</l>
+<l>* set_dict_tuple (DLDataset, 'image_dir', InputImageDir)</l>
+<c>* </c>
+<c>*获得图片属性</c>
+<l>list_image_files (InputImageDir, 'default', [], tempImageFiles)</l>
+<l>read_image (tempImg,tempImageFiles[0])</l>
+<l>get_image_size (tempImg, width, height)</l>
+<l>width:=width/64*64</l>
+<l>height:=height/64*64</l>
+<l>count_channels (tempImg, channelCount)</l>
+<c>* 创建目标检测模型</c>
+<l>create_dict (DLModelDetectionParam)</l>
+<l>set_dict_tuple (DLModelDetectionParam, 'image_dimensions', [width,height,channelCount])</l>
+<l>set_dict_tuple (DLModelDetectionParam, 'min_level', 3)</l>
+<l>set_dict_tuple (DLModelDetectionParam, 'max_level', 4)</l>
+<l>set_dict_tuple (DLModelDetectionParam, 'anchor_num_subscales', 2)</l>
+<l>set_dict_tuple (DLModelDetectionParam, 'anchor_aspect_ratios', [0.1,0.16,0.35,1.0])</l>
+<l>set_dict_tuple (DLModelDetectionParam, 'capacity', 'high')</l>
+<l>get_dict_tuple (DLDataset, 'class_ids', ClassIDs)</l>
+<l>set_dict_tuple (DLModelDetectionParam, 'class_ids', ClassIDs)</l>
+<l>set_dict_tuple (DLModelDetectionParam, 'instance_type', 'rectangle2')</l>
+<l>set_dict_tuple (DLModelDetectionParam, 'anchor_angles', rad([-120,-60,0,60,120,180]))</l>
+<l>set_dict_tuple (DLModelDetectionParam, 'ignore_direction', 'false')</l>
+<l>* set_dict_tuple (DLModelDetectionParam, 'class_ids_no_orientation', [0])</l>
+<c>* </c>
+<l>create_dl_model_detection ('pretrained_dl_classifier_compact.hdl', |ClassIDs|, DLModelDetectionParam, DLModelHandle)</l>
+<c>* </c>
+<c>* 预处理数据到DLDataset.</c>
+<l>split_dl_dataset (DLDataset, 70, 15, [])</l>
+<l>create_dict (PreprocessSettings)</l>
+<c>* 覆盖已存在数据</c>
+<l>set_dict_tuple (PreprocessSettings, 'overwrite_files', true)</l>
+<l>create_dl_preprocess_param_from_model (DLModelHandle, 'none', 'full_domain', [], [], [], DLPreprocessParam)</l>
+<l>preprocess_dl_dataset (DLDataset, PreprocessingOutputDir, DLPreprocessParam, PreprocessSettings, DLDatasetFileName)</l>
+<c>* </c>
+<c>* 预览图片</c>
+<l>create_dict (WindowDict)</l>
+<l>get_dict_tuple (DLDataset, 'samples', DatasetSamples)</l>
+<l>for Index := 0 to 2 by 1</l>
+<l>    SampleIndex := round(rand(1) * (|DatasetSamples| - 1))</l>
+<l>    read_dl_samples (DLDataset, SampleIndex, DLSample)</l>
+<l>    dev_display_dl_data (DLSample, [], DLDataset, 'bbox_ground_truth', [], WindowDict)</l>
+<l>    dev_disp_text ('Press F5 to continue', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>*     stop ()</l>
+<l>endfor</l>
+<l>dev_close_window_dict (WindowDict)</l>
+<c>* </c>
+<c>* 使用gpu训练</c>
+<l>check_dl_devices (PossibleRuntimes)</l>
+<l>if (PossibleRuntimes =~ 'gpu')</l>
+<l>    Runtime := 'gpu'</l>
+<l>elseif (PossibleRuntimes =~ 'cpu')</l>
+<l>    Runtime := 'cpu'</l>
+<c>    * CPU使用线程数</c>
+<l>    NumThreadsTraining := 4</l>
+<l>    set_system ('thread_num', NumThreadsTraining)</l>
+<l>else</l>
+<l>    throw ('No supported device found to continue this example.')</l>
+<l>endif</l>
+<c>* </c>
+<c>* 设定模型参数</c>
+<l>InitialLearningRate := 0.0005</l>
+<l>* InitialLearningRate := 0.001</l>
+<l>set_dl_model_param (DLModelHandle, 'batch_size', 1)</l>
+<l>set_dl_model_param (DLModelHandle, 'learning_rate', InitialLearningRate)</l>
+<l>set_dl_model_param (DLModelHandle, 'momentum', 0.99)</l>
+<l>* set_dl_model_param (DLModelHandle, 'weight_prior', 0.0005)</l>
+<l>set_dl_model_param (DLModelHandle, 'runtime', Runtime)</l>
+<l>set_dl_model_param (DLModelHandle, 'runtime_init', 'immediately')</l>
+<c>* </c>
+<c>* 学习率改变时的策略</c>
+<l>GenParamName := []</l>
+<l>GenParamValue := []</l>
+<l>create_dict (ChangeStrategy)</l>
+<l>set_dict_tuple (ChangeStrategy, 'model_param', 'learning_rate')</l>
+<l>set_dict_tuple (ChangeStrategy, 'initial_value', InitialLearningRate)</l>
+<l>set_dict_tuple (ChangeStrategy, 'epochs', 50)</l>
+<l>set_dict_tuple (ChangeStrategy, 'values', InitialLearningRate * 0.5)</l>
+<l>GenParamName := [GenParamName,'change']</l>
+<l>GenParamValue := [GenParamValue,ChangeStrategy]</l>
+<c>*创建训练参数</c>
+<l>create_dl_train_param (DLModelHandle, 70, 2, 'true', 42, GenParamName, GenParamValue, TrainParam)</l>
+<c>* 训练</c>
+<l>train_dl_model (DLDataset, DLModelHandle, TrainParam, 0, TrainResults, TrainInfos, EvaluationInfos)</l>
+<c>* </c>
+<c>* 读取已经生成的model_best.hdl</c>
+<l>read_dl_model ('model_best.hdl', DLModelHandle)</l>
+<l>dev_disp_text ('Press F5 to continue', 'window', 'bottom', 'left', 'black', [], [])</l>
+<l>stop ()</l>
+<c>* </c>
+<l>dev_close_window ()</l>
+<l>dev_close_window ()</l>
+<c>* </c>
+<c>* ***   3.) EVALUATE   ***</c>
+<c>* </c>
+<c>* Set evaluation related model parameters.</c>
+<l>create_dict (GenParamEval)</l>
+<l>set_dict_tuple (GenParamEval, 'detailed_evaluation', true)</l>
+<l>set_dict_tuple (GenParamEval, 'show_progress', true)</l>
+<l>set_dict_tuple (GenParamEval, 'measures', 'all')</l>
+<l>set_dict_tuple (GenParamEval, 'iou_threshold', [0.5,0.7])</l>
+<c>* </c>
+<l>set_dl_model_param (DLModelHandle, 'min_confidence', 0.5)</l>
+<l>set_dl_model_param (DLModelHandle, 'max_overlap', 0.2)</l>
+<l>set_dl_model_param (DLModelHandle, 'max_overlap_class_agnostic', 0.3)</l>
+<l>evaluate_dl_model (DLDataset, DLModelHandle, 'split', 'test', GenParamEval, EvaluationResult, EvalParams)</l>
+<c>* </c>
+<l>create_dict (DisplayMode)</l>
+<l>set_dict_tuple (DisplayMode, 'display_mode', ['pie_charts_precision','pie_charts_recall','absolute_confusion_matrix'])</l>
+<l>dev_display_detection_detailed_evaluation (EvaluationResult, EvalParams, DisplayMode, WindowDict)</l>
+<l>dev_disp_text ('Press F5 to continue', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>stop ()</l>
+<l>dev_close_window_dict (WindowDict)</l>
+<c>* </c>
+<c>* Optimize the model for inference,</c>
+<c>* meaning, reduce its memory consumption.</c>
+<l>set_dl_model_param (DLModelHandle, 'optimize_for_inference', 'true')</l>
+<l>set_dl_model_param (DLModelHandle, 'batch_size', 1)</l>
+<c>* Save the model in this optimized state.</c>
+<l>write_dl_model (DLModelHandle, 'model_best.hdl')</l>
+<c></c>
+<c>*清除中间文件 </c>
+<l>clean_up_output (PreprocessingOutputDir, RemoveResults)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+<procedure name="clean_up_output">
+<interface>
+<ic>
+<par name="OutputDir" base_type="ctrl" dimension="0"/>
+<par name="RemoveResults" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<c>* This local example procedure cleans up the output of the example.</c>
+<c>* </c>
+<l>if (not RemoveResults)</l>
+<l>    return ()</l>
+<l>endif</l>
+<c>* Display a warning.</c>
+<l>dev_open_window (0, 0, 600, 300, 'black', WindowHandle)</l>
+<l>set_display_font (WindowHandle, 16, 'mono', 'true', 'false')</l>
+<l>WarningCleanup := ['Congratulations, you have finished the example.','','Unless you would like to use the output data / model,','press F5 to clean up.']</l>
+<l>dev_disp_text (WarningCleanup, 'window', 'center', 'center', ['black','black','coral','coral','coral'], [], [])</l>
+<c>* </c>
+<l>stop ()</l>
+<l>dev_close_window ()</l>
+<c>* </c>
+<c>* Delete all outputs of the example.</c>
+<l>remove_dir_recursively (OutputDir)</l>
+<l>delete_file ('model_best.hdl')</l>
+<l>delete_file ('model_best_info.hdict')</l>
+<l>return ()</l>
+</body>
+<docu id="clean_up_output">
+<short lang="en_US">Local example procedure for cleaning up files written by example script.</short>
+<parameters>
+<parameter id="OutputDir">
+<default_type>string</default_type>
+<description lang="en_US">Output directory, where preprocessed data are written to.</description>
+<mixed_type>false</mixed_type>
+<multivalue>false</multivalue>
+<sem_type>filename.dir</sem_type>
+<type_list>
+<item>string</item>
+</type_list>
+</parameter>
+<parameter id="RemoveResults"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

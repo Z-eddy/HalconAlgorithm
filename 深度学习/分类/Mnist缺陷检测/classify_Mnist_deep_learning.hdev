@@ -1,0 +1,593 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.1.0">
+<procedure name="main">
+<interface/>
+<body>
+<c>*</c>
+<c>* 例程介绍了如何使用深度学习对Mnist进行分类</c>
+<c>* 窗口初始化</c>
+<l>dev_update_off ()</l>
+<l>dev_close_window ()</l>
+<l>WindowWidth := 800</l>
+<l>WindowHeight := 600</l>
+<l>dev_open_window_fit_size (0, 0, WindowWidth, WindowHeight, -1, -1, WindowHandle)</l>
+<l>set_display_font (WindowHandle, 16, 'mono', 'true', 'false')</l>
+<c>* </c>
+<l>set_system ('seed_rand', 42)</l>
+<c>* </c>
+<c>* 这个例程对一些步骤进行了简短的描述。如果想进一步了解细节，可以参考分类中的</c>
+<c>* classifiy_pill_defects_deep_learning.hdev这个例子。</c>
+<c>* 需要注意的是18版本的halcon深度学习训练的时候需要GPU支持（不支持CPU训练），测试的时候可以CPU</c>
+<c>* 手写字体识别图像根目录(根据文件存放路径对应修改下面路径，我放在桌面)</c>
+<l>MnistBaseFolder := 'C:/Users/Administrator/Desktop/Mnist/'</l>
+<l>dev_disp_introduction_text (MnistBaseFolder)</l>
+<c></c>
+<l>dev_close_window ()</l>
+<l>dev_resize_window_fit_size (0, 0, WindowWidth, WindowHeight, -1, -1)</l>
+<l>dev_clear_window ()</l>
+<c>* </c>
+<c>* ** 图像预处理 **</c>
+<c>* </c>
+<c>* 加载一个已经经过丰富数据库初训练的分类网络（三种网络模型的详细介绍请参考我的博客）</c>
+<l>read_dl_classifier ('pretrained_dl_classifier_compact.hdl', DLClassifierHandle)</l>
+<c>* Mnist原始图像库.</c>
+<l>RawDataFolder := MnistBaseFolder + ['0','1','2','3','4','5','6','7','8','9']</l>
+<c>* 根据原始数据对应打标签.</c>
+<l>read_dl_classifier_data_set (RawDataFolder, 'last_folder', RawImageFiles, Labels, LabelIndices, Classes)</l>
+<c>* 处理后图片存放文件夹名称.</c>
+<l>PreprocessedFolder := MnistBaseFolder + 'Mnist_preprocessed'</l>
+<c>* 如果设置true，重新运行时将会覆盖存放的处理后图像.</c>
+<l>OverwritePreprocessingFolder := false</l>
+<c>* 该例子默认情况下，执行完之后就会删除保存的图像，如果不想删除，置为false</c>
+<l>RemovePreprocessingAfterExample := true</l>
+<c>* </c>
+<c>* 如果文件已存在或者不覆盖之前图像，跳过此步骤.</c>
+<l>file_exists (PreprocessedFolder, FileExists)</l>
+<l>if (not FileExists or OverwritePreprocessingFolder)</l>
+<c>    * 如果文件夹已经存在，删除</c>
+<l>    if (FileExists)</l>
+<l>        remove_dir_recursively (PreprocessedFolder)</l>
+<l>    endif</l>
+<c>    * 重新创建文件夹</c>
+<l>    make_dir (PreprocessedFolder)</l>
+<c>    * 分别创建类存放文件夹</c>
+<l>    for I := 0 to |Classes| - 1 by 1</l>
+<l>        make_dir (PreprocessedFolder + '/' + Classes[I])</l>
+<l>    endfor</l>
+<c>    * 定义待存放文件路径以及名称</c>
+<l>    parse_filename (RawImageFiles, BaseNames, Extensions, Directories)</l>
+<l>    ObjectFilesOut := PreprocessedFolder + '/' + Labels + '/' + BaseNames + '.hobj'</l>
+<l>    check_output_file_names_for_duplicates (RawImageFiles, ObjectFilesOut)</l>
+<c>    * 处理输入图像并保存为.hobj格式文件</c>
+<l>    for I := 0 to |RawImageFiles| - 1 by 1</l>
+<l>        read_image (Image, RawImageFiles[I])</l>
+<c>        * 仅改变图像尺寸（Mnist图像本来就小，所以我没有进行去除背景）</c>
+<l>        preprocess_dl_fruit_example (Image, ImagePreprocessed, DLClassifierHandle)</l>
+<c>        * 将处理后的图像对应存放到文件夹</c>
+<l>        write_object (ImagePreprocessed, ObjectFilesOut[I])</l>
+<l>        dev_disp_preprocessing_progress (I, RawImageFiles, PreprocessedFolder, WindowHandle)</l>
+<l>    endfor</l>
+<l>    dev_clear_window ()</l>
+<l>    dev_disp_text ('Preprocessing done.', 'window', 'top', 'left', 'black', [], [])</l>
+<l>endif</l>
+<c>* </c>
+<c>* 将数据分为训练、验证、测试集</c>
+<c>* </c>
+<l>read_dl_classifier_data_set (PreprocessedFolder, 'last_folder', ImageFiles, Labels, LabelsIndices, Classes)</l>
+<c>* </c>
+<c>* 将数据成三个子集，训练集占70%，验证集15%，测试集15%</c>
+<l>TrainingPercent := 70</l>
+<l>ValidationPercent := 15</l>
+<l>split_dl_classifier_data_set (ImageFiles, Labels, TrainingPercent, ValidationPercent, TrainingImages, TrainingLabels, ValidationImages, ValidationLabels, TestImages, TestLabels)</l>
+<c>* </c>
+<c>* ** 网络训练参数设置 **</c>
+<c>* 设置网络的类名</c>
+<l>set_dl_classifier_param (DLClassifierHandle, 'classes', Classes)</l>
+<c>* 设置网络训练批处理数</c>
+<l>BatchSize := 64</l>
+<l>set_dl_classifier_param (DLClassifierHandle, 'batch_size', BatchSize)</l>
+<c>* 设置GPU运行环境</c>
+<l>try</l>
+<l>    set_dl_classifier_param (DLClassifierHandle, 'runtime_init', 'immediately')</l>
+<l>catch (Exception)</l>
+<l>    dev_disp_error_text (Exception)</l>
+<l>    if (RemovePreprocessingAfterExample and Exception[0] != 4104)</l>
+<l>        remove_dir_recursively (PreprocessedFolder)</l>
+<l>        dev_disp_text ('Preprocessed data in folder "' + PreprocessedFolder + '" have been deleted.', 'window', 'bottom', 'left', 'black', [], [])</l>
+<l>    endif</l>
+<l>    stop ()</l>
+<l>endtry</l>
+<c>* 学习率设置0.001</c>
+<l>InitialLearningRate := 0.001</l>
+<l>set_dl_classifier_param (DLClassifierHandle, 'learning_rate', InitialLearningRate)</l>
+<c>* 每30次根据下降因子更新学习率</c>
+<l>LearningRateStepEveryNthEpoch := 30</l>
+<l>LearningRateStepRatio := 0.1</l>
+<c>* 迭代次数</c>
+<l>NumEpochs := 500</l>
+<c>* </c>
+<l>dev_clear_window ()</l>
+<l>dev_disp_text ('Training has started...', 'window', 'top', 'left', 'black', [], [])</l>
+<c>* 每迭代4次绘制一下图</c>
+<l>PlotEveryNthEpoch := 4</l>
+<c>* 训练好的网络model名称</c>
+<l>FileName := MnistBaseFolder + 'classifier_Mnist.hdl'</l>
+<c>* </c>
+<c>* ** 网络训练 **</c>
+<c>*</c>
+<l>train_fruit_classifier (DLClassifierHandle, FileName, NumEpochs, TrainingImages, TrainingLabels, ValidationImages, ValidationLabels, LearningRateStepEveryNthEpoch, LearningRateStepRatio, PlotEveryNthEpoch, WindowHandle)</l>
+<l>dev_disp_text ('Press Run (F5) to continue', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>stop ()</l>
+<l>read_dl_classifier (FileName, DLClassifierHandle)</l>
+<c>* </c>
+<c>* 计算验证数据集的混淆矩阵.</c>
+<l>get_predicted_classes (ValidationImages, DLClassifierHandle, PredictedClassesValidation)</l>
+<l>gen_confusion_matrix (ValidationLabels, PredictedClassesValidation, [], [], WindowHandle, ConfusionMatrix)</l>
+<l>dev_disp_text ('Validation data', 'window', 'top', 'left', 'gray', 'box', 'false')</l>
+<l>dev_disp_text ('Press Run (F5) to continue', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>stop ()</l>
+<l>dev_clear_window ()</l>
+<c>* </c>
+<c>* ** 测试 **</c>
+<c>* </c>
+<c>* 加载刚才训练好的网络Model</c>
+<l>read_dl_classifier (FileName, DLClassifierHandle)</l>
+<c>* 单张分别测试</c>
+<l>set_dl_classifier_param (DLClassifierHandle, 'batch_size', 1)</l>
+<c>* 测试可以在CPU环境下进行</c>
+<l>try</l>
+<l>    set_dl_classifier_param (DLClassifierHandle, 'runtime', 'cpu')</l>
+<l>    Runtime := 'cpu'</l>
+<l>catch (Exception)</l>
+<l>    Runtime := 'gpu'</l>
+<l>endtry</l>
+<c>* This initializes the runtime environment immediately.</c>
+<l>set_dl_classifier_param (DLClassifierHandle, 'runtime_init', 'immediately')</l>
+<c>* </c>
+<l>dev_resize_window_fit_size (0, 0, WindowWidth, WindowHeight, -1, -1)</l>
+<l>dev_disp_inference_text (Runtime)</l>
+<l>stop ()</l>
+<c>* 循环测试分类结果</c>
+<l>for Index := 0 to 20 by 1</l>
+<l>    ImageFile := RawImageFiles[floor(rand(1) * |RawImageFiles|)]</l>
+<l>    read_image (Image, ImageFile)</l>
+<l>    dev_resize_window_fit_image (Image, 0, 0, -1, -1)</l>
+<l>    preprocess_dl_fruit_example (Image, ImagePreprocessed, DLClassifierHandle)</l>
+<l>    apply_dl_classifier (ImagePreprocessed, DLClassifierHandle, DLClassifierResultHandle)</l>
+<l>    get_dl_classifier_result (DLClassifierResultHandle, 'all', 'predicted_classes', PredictedClass)</l>
+<c>    * </c>
+<l>    dev_display (Image)</l>
+<l>    Text := 'Predicted class: ' + PredictedClass</l>
+<l>    dev_disp_text (Text, 'window', 'top', 'left', 'white', 'box', 'false')</l>
+<l>    dev_disp_text ('Press Run (F5) to continue', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>    stop ()</l>
+<l>endfor</l>
+<l>stop ()</l>
+<c>* 默认执行完程序结束，删除文件</c>
+<l>if (RemovePreprocessingAfterExample)</l>
+<l>    remove_dir_recursively (PreprocessedFolder)</l>
+<l>    dev_disp_text ('End of program.\nPreprocessed data have been deleted.', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>else</l>
+<l>    dev_disp_text ('      End of program      ', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>endif</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+<procedure name="get_predicted_classes">
+<interface>
+<ic>
+<par name="Images" base_type="ctrl" dimension="0"/>
+<par name="DLClassifierHandle" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="Top1PredictedClasses" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>apply_dl_classifier_batchwise (Images, DLClassifierHandle, DLClassifierResultIDsTest, PredictedClasses, Confidences)</l>
+<c></c>
+<l>Top1PredictedClasses := []</l>
+<l>for Index := 0 to PredictedClasses.length() - 1 by 1</l>
+<l>    Top1PredictedClasses := [Top1PredictedClasses,PredictedClasses.at(Index)[0]]</l>
+<l>endfor</l>
+<l>return ()</l>
+</body>
+<docu id="get_predicted_classes">
+<parameters>
+<parameter id="DLClassifierHandle"/>
+<parameter id="Images"/>
+<parameter id="Top1PredictedClasses"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="dev_disp_preprocessing_progress">
+<interface>
+<ic>
+<par name="I" base_type="ctrl" dimension="0"/>
+<par name="RawImageFiles" base_type="ctrl" dimension="0"/>
+<par name="PreprocessedFolder" base_type="ctrl" dimension="0"/>
+<par name="WindowHandle" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>if (I % 10 == 9)</l>
+<l>    set_window_param (WindowHandle, 'flush', 'false')</l>
+<l>    dev_clear_window ()</l>
+<l>    Text := 'Preprocessing the data set... (' + (I + 1) + ' of ' + |RawImageFiles| + ')'</l>
+<l>    Text[|Text|] := ''</l>
+<l>    Text[|Text|] := 'The preprocessed images are written into the folder'</l>
+<l>    Text[|Text|] := '\'' + PreprocessedFolder + '\','</l>
+<l>    Text[|Text|] := 'as specified by the variable PreprocessedFolder.'</l>
+<l>    Text[|Text|] := 'The preprocessed images will be deleted automatically'</l>
+<l>    Text[|Text|] := 'at the end of the program. '</l>
+<l>    dev_disp_text (Text, 'window', 'top', 'left', 'white', 'box', 'false')</l>
+<l>    flush_buffer (WindowHandle)</l>
+<l>    set_window_param (WindowHandle, 'flush', 'true')</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="dev_disp_preprocessing_progress">
+<parameters>
+<parameter id="I"/>
+<parameter id="PreprocessedFolder"/>
+<parameter id="RawImageFiles"/>
+<parameter id="WindowHandle"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="dev_disp_error_text">
+<interface>
+<ic>
+<par name="Exception" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>ErrorAndAdviceText := 'An error occurred during runtime initialization.'</l>
+<l>ErrorAndAdviceText := [ErrorAndAdviceText,'']</l>
+<l>ErrorAndAdviceText := [ErrorAndAdviceText,'Error ' + Exception[0] + ': \'' + Exception[2] + '\'']</l>
+<l>if (Exception[0] == 4104)</l>
+<c>    * In case of out of device memory we can give advice.</c>
+<l>    ErrorAndAdviceText := [ErrorAndAdviceText,'']</l>
+<l>    ErrorAndAdviceText := [ErrorAndAdviceText,'Install a GPU with more RAM or reduce the batch size.']</l>
+<l>    ErrorAndAdviceText := [ErrorAndAdviceText,'']</l>
+<l>    ErrorAndAdviceText := [ErrorAndAdviceText,'Note that changing the batch size will have an influence on the results.']</l>
+<l>endif</l>
+<l>dev_clear_window ()</l>
+<c>* Display text with line breaks after 60 characters.</c>
+<l>dev_disp_text (regexp_replace(ErrorAndAdviceText + ' ',['(.{0,60})\\s','replace_all'],'$1\n'), 'window', 'center', 'left', 'red', [], [])</l>
+<l>return ()</l>
+</body>
+<docu id="dev_disp_error_text">
+<parameters>
+<parameter id="Exception"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="check_output_file_names_for_duplicates">
+<interface>
+<ic>
+<par name="RawImageFiles" base_type="ctrl" dimension="0"/>
+<par name="ObjectFilesOut" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>CheckOutputFiles := uniq(sort(ObjectFilesOut))</l>
+<l>if (|CheckOutputFiles| != |RawImageFiles|)</l>
+<l>    SortedImageFiles := sort(ObjectFilesOut)</l>
+<l>    for I := 0 to |SortedImageFiles| - 1 by 1</l>
+<l>        if (SortedImageFiles[I] != CheckOutputFiles[I])</l>
+<l>            throw ('Error some file(s) have the same output filenames: ' + SortedImageFiles[I])</l>
+<l>        endif</l>
+<l>    endfor</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="check_output_file_names_for_duplicates">
+<parameters>
+<parameter id="ObjectFilesOut"/>
+<parameter id="RawImageFiles"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="train_fruit_classifier">
+<interface>
+<ic>
+<par name="DLClassifierHandle" base_type="ctrl" dimension="0"/>
+<par name="FileName" base_type="ctrl" dimension="0"/>
+<par name="NumEpochs" base_type="ctrl" dimension="0"/>
+<par name="TrainingImages" base_type="ctrl" dimension="0"/>
+<par name="TrainingLabels" base_type="ctrl" dimension="0"/>
+<par name="ValidationImages" base_type="ctrl" dimension="0"/>
+<par name="ValidationLabels" base_type="ctrl" dimension="0"/>
+<par name="LearningRateStepEveryNthEpoch" base_type="ctrl" dimension="0"/>
+<par name="LearningRateStepRatio" base_type="ctrl" dimension="0"/>
+<par name="PlotEveryNthEpoch" base_type="ctrl" dimension="0"/>
+<par name="WindowHandle" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<c>* For the plot during training,</c>
+<c>* we need to concatenate some intermediate results.</c>
+<l>TrainingErrors := []</l>
+<l>ValidationErrors := []</l>
+<l>LearningRates := []</l>
+<l>Epochs := []</l>
+<l>LossByIteration := []</l>
+<l>get_dl_classifier_param (DLClassifierHandle, 'batch_size', BatchSize)</l>
+<l>MinValidationError := 1</l>
+<c></c>
+<c>* Create a tuple that includes all the iterations</c>
+<c>* where the plot should be computed (including the last ieration).</c>
+<l>NumBatchesInEpoch := int(floor(|TrainingImages| / real(BatchSize)))</l>
+<l>NumTotalIterations := (NumBatchesInEpoch * NumEpochs) - 1</l>
+<l>PlottedIterations := round([NumBatchesInEpoch * [0:PlotEveryNthEpoch:NumEpochs - 1],NumTotalIterations])</l>
+<c></c>
+<c>* TrainSequence is used for easier indexing of the training data.</c>
+<l>tuple_gen_sequence (0, |TrainingImages| - 1, 1, TrainSequence)</l>
+<c></c>
+<c>* Select a subset of the training data set</c>
+<c>* in order to obtain a fast approximation</c>
+<c>* of the training error during training (plotting).</c>
+<l>SelectPercentageTrainingImages := 100</l>
+<l>select_percentage_dl_classifier_data (TrainingImages, TrainingLabels, SelectPercentageTrainingImages, TrainingImagesSelected, TrainingLabelsSelected)</l>
+<c></c>
+<l>for Epoch := 0 to NumEpochs - 1 by 1</l>
+<c>    * In order to get randomness in each epoch,</c>
+<c>    * the training set is shuffled every epoch.</c>
+<l>    tuple_shuffle (TrainSequence, TrainSequence)</l>
+<l>    for Iteration := 0 to NumBatchesInEpoch - 1 by 1</l>
+<c>        * Select a batch from the training data set.</c>
+<l>        BatchStart := Iteration * BatchSize</l>
+<l>        BatchEnd := BatchStart + (BatchSize - 1)</l>
+<l>        BatchIndices := TrainSequence[BatchStart:BatchEnd]</l>
+<l>        BatchImageFiles := TrainingImages[BatchIndices]</l>
+<l>        BatchLabels := TrainingLabels[BatchIndices]</l>
+<c></c>
+<c>        * Read the image of the current batch.</c>
+<l>        read_image (BatchImages, BatchImageFiles)</l>
+<c>        * Augment the images to get a better variety of training images.</c>
+<l>        GenParamName := 'mirror'</l>
+<l>        GenParamValue := 'rc'</l>
+<l>        augment_images (BatchImages, BatchImages, GenParamName, GenParamValue)</l>
+<c></c>
+<c>        * Train the network with these images and ground truth labels.</c>
+<l>        train_dl_classifier_batch (BatchImages, DLClassifierHandle, BatchLabels, DLClassifierTrainResultHandle)</l>
+<c>        * You can access the current value of the loss function,</c>
+<c>        * which should decrease during the training.</c>
+<l>        get_dl_classifier_train_result (DLClassifierTrainResultHandle, 'loss', Loss)</l>
+<c>        * Store the loss in a tuple .</c>
+<l>        LossByIteration := [LossByIteration,Loss]</l>
+<c></c>
+<c>        * In regular intervals, we want to evaluate</c>
+<c>        * how well our classifier performs.</c>
+<l>        CurrentIteration := int(Iteration + (NumBatchesInEpoch * Epoch))</l>
+<l>        if (sum(CurrentIteration [==] PlottedIterations))</l>
+<c>            * Plot the progress regularly.</c>
+<c>            * Evaluate the current classifier on the training and validation set.</c>
+<l>            apply_dl_classifier_batchwise (TrainingImagesSelected, DLClassifierHandle, TrainingDLClassifierResultIDs, TrainingPredictedLabels, TrainingConfidences)</l>
+<l>            apply_dl_classifier_batchwise (ValidationImages, DLClassifierHandle, ValidationDLClassifierResultIDs, ValidationPredictedLabels, ValidationConfidences)</l>
+<c>            * Evaluate the top-1 error on each dataset.</c>
+<l>            evaluate_dl_classifier (TrainingLabelsSelected, DLClassifierHandle, TrainingDLClassifierResultIDs, 'top1_error', 'global', TrainingTop1Error)</l>
+<l>            evaluate_dl_classifier (ValidationLabels, DLClassifierHandle, ValidationDLClassifierResultIDs, 'top1_error', 'global', ValidationTop1Error)</l>
+<c>            * Concatenate the values for the plot.</c>
+<l>            get_dl_classifier_param (DLClassifierHandle, 'learning_rate', LearningRate)</l>
+<l>            TrainingErrors := [TrainingErrors,TrainingTop1Error]</l>
+<l>            ValidationErrors := [ValidationErrors,ValidationTop1Error]</l>
+<l>            LearningRates := [LearningRates,LearningRate]</l>
+<l>            Epochs := [Epochs,PlottedIterations[|Epochs|] / real(NumBatchesInEpoch)]</l>
+<c>            * Plot validation and error against the epochs in order to</c>
+<c>            * observe the progress of the training.</c>
+<l>            plot_dl_classifier_training_progress (TrainingErrors, ValidationErrors, LearningRates, Epochs, NumEpochs, WindowHandle)</l>
+<l>            if (ValidationTop1Error &lt;= MinValidationError)</l>
+<l>                write_dl_classifier (DLClassifierHandle, FileName)</l>
+<l>                MinValidationError := ValidationTop1Error</l>
+<l>            endif</l>
+<l>        endif</l>
+<l>    endfor</l>
+<c>    * Reduce the learning rate every nth epoch.</c>
+<l>    if ((Epoch + 1) % LearningRateStepEveryNthEpoch == 0)</l>
+<l>        set_dl_classifier_param (DLClassifierHandle, 'learning_rate', LearningRate * LearningRateStepRatio)</l>
+<l>        get_dl_classifier_param (DLClassifierHandle, 'learning_rate', LearningRate)</l>
+<l>    endif</l>
+<l>endfor</l>
+<l>stop ()</l>
+<l>return ()</l>
+</body>
+<docu id="train_fruit_classifier">
+<parameters>
+<parameter id="DLClassifierHandle"/>
+<parameter id="FileName"/>
+<parameter id="LearningRateStepEveryNthEpoch"/>
+<parameter id="LearningRateStepRatio"/>
+<parameter id="NumEpochs"/>
+<parameter id="PlotEveryNthEpoch"/>
+<parameter id="TrainingImages"/>
+<parameter id="TrainingLabels"/>
+<parameter id="ValidationImages"/>
+<parameter id="ValidationLabels"/>
+<parameter id="WindowHandle"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="dev_disp_missing_images_text">
+<interface/>
+<body>
+<l>ErrorAndAdviceText := 'The images required for this example could not be found.'</l>
+<l>ErrorAndAdviceText := [ErrorAndAdviceText,'']</l>
+<l>ErrorAndAdviceText := [ErrorAndAdviceText,'These images are part of a separate installer. Please']</l>
+<l>ErrorAndAdviceText := [ErrorAndAdviceText,'refer to the Installation Guide for more information on']</l>
+<l>ErrorAndAdviceText := [ErrorAndAdviceText,'this topic!']</l>
+<l>dev_clear_window ()</l>
+<l>dev_disp_text (ErrorAndAdviceText, 'window', 'center', 'left', 'red', [], [])</l>
+<l>return ()</l>
+</body>
+<docu id="dev_disp_missing_images_text">
+<parameters/>
+</docu>
+</procedure>
+<procedure name="dev_disp_missing_classifier_text">
+<interface/>
+<body>
+<l>ErrorAndAdviceText := 'The classifier required for this example could not be found.'</l>
+<l>ErrorAndAdviceText := [ErrorAndAdviceText,'']</l>
+<l>ErrorAndAdviceText := [ErrorAndAdviceText,'This classifier is part of a separate installer. Please']</l>
+<l>ErrorAndAdviceText := [ErrorAndAdviceText,'refer to the Installation Guide for more information on']</l>
+<l>ErrorAndAdviceText := [ErrorAndAdviceText,'this topic!']</l>
+<l>dev_clear_window ()</l>
+<l>dev_disp_text (ErrorAndAdviceText, 'window', 'center', 'left', 'red', [], [])</l>
+<l>return ()</l>
+</body>
+<docu id="dev_disp_missing_classifier_text">
+<parameters/>
+</docu>
+</procedure>
+<procedure name="preprocess_dl_fruit_example">
+<interface>
+<io>
+<par name="Image" base_type="iconic" dimension="0"/>
+</io>
+<oo>
+<par name="ImagePreprocessed" base_type="iconic" dimension="0"/>
+</oo>
+<ic>
+<par name="DLClassifierHandle" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>PreprocessingGenParamName := 'domain_handling'</l>
+<l>PreprocessingGenParamValue := 'crop_domain'</l>
+<l>preprocess_dl_classifier_images (Image, ImagePreprocessed, PreprocessingGenParamName, PreprocessingGenParamValue, DLClassifierHandle)</l>
+<l>return ()</l>
+</body>
+<docu id="preprocess_dl_fruit_example">
+<abstract lang="en_US">Preprocesses the fruit classification example images suitable for classification.</abstract>
+<parameters>
+<parameter id="DLClassifierHandle">
+<default_type>integer</default_type>
+<mixed_type>false</mixed_type>
+<multivalue>false</multivalue>
+<sem_type>dl_classifier</sem_type>
+<type_list>
+<item>integer</item>
+</type_list>
+</parameter>
+<parameter id="Image">
+<multichannel>true</multichannel>
+<multivalue>false</multivalue>
+<sem_type>image</sem_type>
+<type_list>
+<item>byte</item>
+</type_list>
+</parameter>
+<parameter id="ImagePreprocessed">
+<multichannel>true</multichannel>
+<multivalue>false</multivalue>
+<sem_type>image</sem_type>
+<type_list>
+<item>real</item>
+</type_list>
+</parameter>
+</parameters>
+</docu>
+</procedure>
+<procedure name="dev_disp_introduction_text">
+<interface>
+<ic>
+<par name="MnistBaseFolder" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>Text := '这个例子改编于水果分类的例子，用于手写字体识别应用 '</l>
+<c></c>
+<l>dev_clear_window ()</l>
+<l>dev_resize_window_fit_size (0, 0, 1024, 240, -1, -1)</l>
+<l>dev_disp_text (Text, 'window', 'top', 'left', 'white', 'box', 'false')</l>
+<c>* Display example images,</c>
+<c>* display a warning in case the images are not found.</c>
+<l>try</l>
+<l>    dev_disp_images_of_classes (MnistBaseFolder)</l>
+<l>catch (Exception)</l>
+<l>    if (Exception[0] == 5200)</l>
+<l>        dev_disp_missing_images_text ()</l>
+<l>        stop ()</l>
+<l>    else</l>
+<l>        throw (Exception)</l>
+<l>    endif</l>
+<l>endtry</l>
+<c>* Check if the runtime can be initialized.</c>
+<l>try</l>
+<l>    read_dl_classifier ('pretrained_dl_classifier_compact.hdl', DLClassifierHandle)</l>
+<l>    set_dl_classifier_param (DLClassifierHandle, 'batch_size', 1)</l>
+<l>    set_dl_classifier_param (DLClassifierHandle, 'runtime_init', 'immediately')</l>
+<l>catch (Exception)</l>
+<l>    if (Exception[0] == 5200)</l>
+<l>        dev_disp_missing_classifier_text ()</l>
+<l>        stop ()</l>
+<l>    else</l>
+<l>        dev_disp_error_text (Exception)</l>
+<l>    endif</l>
+<l>endtry</l>
+<l>return ()</l>
+</body>
+<docu id="dev_disp_introduction_text">
+<parameters>
+<parameter id="MnistBaseFolder"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="dev_disp_images_of_classes">
+<interface>
+<ic>
+<par name="MnistBaseFolder" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>FileName := [MnistBaseFolder+'0/0.0',MnistBaseFolder+'1/1.0',MnistBaseFolder+'2/2.0',MnistBaseFolder+'3/3.0',MnistBaseFolder+'4/4.0',\
+             MnistBaseFolder+'5/5.0',MnistBaseFolder+'6/6.0',MnistBaseFolder+'7/7.0',MnistBaseFolder+'8/8.0',MnistBaseFolder+'9/9.0']</l>
+<l>read_image (Image, FileName)</l>
+<l>tile_images (Image, TiledImage, 3, 'horizontal')</l>
+<l>dev_open_window_fit_image (TiledImage, 245, 0, -1, 300, WindowHandle1)</l>
+<l>set_display_font (WindowHandle1, 14, 'mono', 'true', 'false')</l>
+<l>dev_display (TiledImage)</l>
+<l>dev_disp_text ('Press Run (F5) to continue', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>return ()</l>
+</body>
+<docu id="dev_disp_images_of_classes">
+<parameters>
+<parameter id="MnistBaseFolder"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="dev_disp_inference_text">
+<interface>
+<ic>
+<par name="Runtime" base_type="ctrl" dimension="0"/>
+</ic>
+</interface>
+<body>
+<l>Text := 'INFERENCE'</l>
+<l>Text[|Text|] := ''</l>
+<l>Text[|Text|] := 'This part of the program is a brief introduction on how to '</l>
+<l>Text[|Text|] := 'make use of your trained classifier. '</l>
+<l>Text[|Text|] := ''</l>
+<l>Text[|Text|] := 'It is important that the same preprocessing as for the training '</l>
+<l>Text[|Text|] := 'of the classifier is applied to the raw images. '</l>
+<l>Text[|Text|] := ''</l>
+<l>if (Runtime == 'cpu')</l>
+<l>    Text[|Text|] := 'The \'cpu\' runtime has been selected for inference.'</l>
+<l>endif</l>
+<c></c>
+<l>dev_clear_window ()</l>
+<l>dev_disp_text (Text, 'window', 'top', 'left', 'white', 'box', 'false')</l>
+<l>dev_disp_text ('Press Run (F5) to continue', 'window', 'bottom', 'right', 'black', [], [])</l>
+<l>return ()</l>
+</body>
+<docu id="dev_disp_inference_text">
+<parameters>
+<parameter id="Runtime"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>
