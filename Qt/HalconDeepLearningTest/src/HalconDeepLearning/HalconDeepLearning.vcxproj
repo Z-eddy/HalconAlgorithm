@@ -100,6 +100,10 @@ copy "$(TargetDir)$(targetname).lib" "$(SolutionDir)lib"</Command>
       <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
       <ExecutionDescription>Moc'ing %(Identity)...</ExecutionDescription>
     </QtMoc>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" "$(SolutionDir)bin"
+copy "$(TargetDir)$(targetname).lib" "$(SolutionDir)lib"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="halconAlgorithm.cpp" />
