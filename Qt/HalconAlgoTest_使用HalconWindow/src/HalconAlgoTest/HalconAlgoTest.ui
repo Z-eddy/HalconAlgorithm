@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>944</width>
-    <height>518</height>
+    <height>829</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,7 +46,7 @@
       <x>10</x>
       <y>50</y>
       <width>571</width>
-      <height>401</height>
+      <height>331</height>
      </rect>
     </property>
    </widget>
@@ -56,8 +56,21 @@
       <x>590</x>
       <y>110</y>
       <width>341</width>
-      <height>341</height>
+      <height>651</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="labImage">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>380</y>
+      <width>571</width>
+      <height>381</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Image</string>
     </property>
    </widget>
   </widget>

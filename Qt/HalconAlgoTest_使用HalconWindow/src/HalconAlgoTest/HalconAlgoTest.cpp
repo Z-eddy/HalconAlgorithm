@@ -2,6 +2,9 @@
 #include<QDebug>
 #include<QStringList>
 #include<QTime>
+#include<QImage>
+#include<QPixmap>
+#include "HalconDeepLearning.h"
 #include "LensCheckAlgorithm.h"
 
 HalconAlgoTest::HalconAlgoTest(QWidget *parent)
@@ -26,12 +29,18 @@ void HalconAlgoTest::on_btnClicked_clicked()
 	}
 	path += QString("%1.jpg").arg(i++);
 	algorithm_.setTestRingImage(path);
-	auto img{ algorithm_.getHalconRingImg() };
+	//»ñµÃhalconÍ¼Ïñ
+	auto rawImg{ algorithm_.getHalconRingImg() };
+	QSharedPointer<HImage> img{new HImage};
+	Rgb1ToGray(*rawImg, img.get());
+	//ÏÔÊ¾halconÍ¼Ïñ
 	HTuple w, h;
 	GetImageSize(*img, &w, &h);
 	SetPart(winHandle, 0, 0, h, w);
 	DispObj(*img,HDevWindowStack::GetActive());
-
+	//ÏÔÊ¾QPixmapÍ¼Ïñ
+	auto pixmap{ QPixmap::fromImage(QImage{}) };
+	ui.labImage->setPixmap(pixmap);
 
 	QTime time;
 	time.start();
