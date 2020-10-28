@@ -7,19 +7,66 @@ extern void create_dl_preprocess_param_from_model (HTuple hv_DLModelHandle, HTup
     HTuple hv_DomainHandling, HTuple hv_SetBackgroundID, HTuple hv_ClassIDsBackground, 
     HTuple hv_GenParam, HTuple *hv_DLPreprocessParam);
 
-QImage HalconDeepLearning::hImage2Pixmap(QSharedPointer<HalconCpp::HImage> image)
+QImage hImage2Pixmap(QSharedPointer<HalconCpp::HImage> halconImage)
 {
-	if (!image || !image->IsInitialized()) {//未初始化或无图像初始化则返回空
+	if (halconImage.isNull() || !halconImage->IsInitialized()) {
 		return {};
 	}
-	auto channelCount{ image->CountChannels() };
-	if (channelCount==1) {//单通道灰度图像
-		Hlong width, height;//图像宽高
-		HString hType;
-		auto imgPtr{static_cast<uchar*>(image->GetImagePointer1(&hType,&width,&height)) };
-		//创建QImage
-		return QImage( imgPtr,width,height,QImage::Format_Indexed8 );
+	Hlong width;
+	Hlong height;
+	halconImage->GetImageSize(&width, &height);
+
+	HTuple channels = halconImage->CountChannels();
+	HTuple type = halconImage->GetImageType();
+
+	if (strcmp(type[0].S(), "byte")) // 如果不是 byte 类型，则失败
+	{
+		return {};
 	}
+
+	QImage::Format format;
+	switch (channels[0].I())
+	{
+	case 1:
+		format = QImage::Format_Grayscale8;
+		break;
+	case 3:
+		format = QImage::Format_RGB32;
+		break;
+	default:
+		return {};
+	}
+
+	QImage image;
+	if (image.width() != width || image.height() != height || image.format() != format)
+	{
+		image = QImage(static_cast<int>(width),
+			static_cast<int>(height),
+			format);
+	}
+	HString Type;
+	if (channels[0].I() == 1)
+	{
+		unsigned char * pSrc = reinterpret_cast<unsigned char *>(halconImage->GetImagePointer1(&Type, &width, &height));
+		memcpy(image.bits(), pSrc, static_cast<size_t>(width) * static_cast<size_t>(height));
+	}
+	else if (channels[0].I() == 3)
+	{
+		uchar *R, *G, *B;
+		halconImage->GetImagePointer3(reinterpret_cast<void **>(&R),
+			reinterpret_cast<void **>(&G),
+			reinterpret_cast<void **>(&B), &Type, &width, &height);
+
+		for (int row = 0; row < height; row++)
+		{
+			QRgb* line = reinterpret_cast<QRgb*>(image.scanLine(row));
+			for (int col = 0; col < width; col++)
+			{
+				line[col] = qRgb(*R++, *G++, *B++);
+			}
+		}
+	}
+	return image;
 }
 
 
@@ -28,7 +75,8 @@ HalconDeepLearning::HalconDeepLearning(QObject *parent /*= Q_NULLPTR*/)
 	hv_DLPreprocessParam_(new HTuple),\
 	hv_classNames_(new HTuple),\
 	batchSize_(1),\
-	threadCount_(4)
+	threadCount_(4),\
+	isUseCPU_(false)
 {
 }
 
@@ -57,6 +105,16 @@ void HalconDeepLearning::setBatchSize(int size)
 int HalconDeepLearning::getBatchSize(int size)
 {
 	return batchSize_;
+}
+
+void HalconDeepLearning::setUseCPU(bool use)
+{
+	isUseCPU_ = use;
+}
+
+bool HalconDeepLearning::isUseCPU()
+{
+	return isUseCPU_;
 }
 
 void HalconDeepLearning::setThreadCount(int count)
@@ -91,7 +149,7 @@ void HalconDeepLearning::initDlModel(QString modelPath,int batchSize,int threadC
 	check_dl_devices(&hv_PossibleRuntimes);
 	//有gpu则设置为gpu训练
 	HTuple hv_Runtime;//运行时使用gpu/cpu
-	if (0 != (hv_PossibleRuntimes.TupleRegexpTest("gpu")))
+	if (0!=(hv_PossibleRuntimes.TupleRegexpTest("gpu")) && !isUseCPU_)
 	{
 		hv_Runtime = "gpu";
 	}
