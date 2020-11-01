@@ -365,3 +365,4 @@ MigrationBackup/
 .ionide/
 
 GeneratedFiles/
+*.hdl

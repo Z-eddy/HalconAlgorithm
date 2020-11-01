@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.1209
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LensCheckAlgorithm", "..\..\..\..\work\BYD\chenweizhen\LensMonitor\src\LensCheckAlgorithm\LensCheckAlgorithm.vcxproj", "{F46ABE46-979D-4A36-8242-351B2B8A9EFC}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HalconAlgoTest", "src\HalconAlgoTest\HalconAlgoTest.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HalconDeepLearning", "..\..\HalconAlgorithm\Qt\HalconDeepLearning\HalconDeepLearning.vcxproj", "{9A7F4BC9-A8CC-4355-98B7-8B93EABBC0C6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HalconDeepLearning", "src\HalconDeepLearning\HalconDeepLearning.vcxproj", "{9A7F4BC9-A8CC-4355-98B7-8B93EABBC0C6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LensCheckAlgorithm", "src\LensCheckAlgorithm\LensCheckAlgorithm.vcxproj", "{F46ABE46-979D-4A36-8242-351B2B8A9EFC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{F46ABE46-979D-4A36-8242-351B2B8A9EFC}.Debug|x64.ActiveCfg = Debug|x64
-		{F46ABE46-979D-4A36-8242-351B2B8A9EFC}.Debug|x64.Build.0 = Debug|x64
-		{F46ABE46-979D-4A36-8242-351B2B8A9EFC}.Release|x64.ActiveCfg = Release|x64
-		{F46ABE46-979D-4A36-8242-351B2B8A9EFC}.Release|x64.Build.0 = Release|x64
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.ActiveCfg = Debug|x64
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.Build.0 = Debug|x64
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.ActiveCfg = Release|x64
@@ -27,6 +23,10 @@ Global
 		{9A7F4BC9-A8CC-4355-98B7-8B93EABBC0C6}.Debug|x64.Build.0 = Debug|x64
 		{9A7F4BC9-A8CC-4355-98B7-8B93EABBC0C6}.Release|x64.ActiveCfg = Release|x64
 		{9A7F4BC9-A8CC-4355-98B7-8B93EABBC0C6}.Release|x64.Build.0 = Release|x64
+		{F46ABE46-979D-4A36-8242-351B2B8A9EFC}.Debug|x64.ActiveCfg = Debug|x64
+		{F46ABE46-979D-4A36-8242-351B2B8A9EFC}.Debug|x64.Build.0 = Debug|x64
+		{F46ABE46-979D-4A36-8242-351B2B8A9EFC}.Release|x64.ActiveCfg = Release|x64
+		{F46ABE46-979D-4A36-8242-351B2B8A9EFC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

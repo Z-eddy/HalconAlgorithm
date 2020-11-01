@@ -3,6 +3,7 @@
 #include<QStringList>
 #include<QTime>
 #include "LensCheckAlgorithm.h"
+using namespace HalconCpp;
 
 HalconAlgoTest::HalconAlgoTest(QWidget *parent)
 	: QMainWindow(parent),\
@@ -12,8 +13,13 @@ HalconAlgoTest::HalconAlgoTest(QWidget *parent)
 	auto id{ static_cast<Hlong>(ui.halconWindow->winId()) };
 	auto w{ ui.halconWindow->width() };
 	auto h{ ui.halconWindow->height() };
-	OpenWindow(0, 0, w, h, id, "visible", "", &winHandle);
-	HDevWindowStack::Push(winHandle);
+	OpenWindow(0, 0, w, h, id, "visible", "", &winHandle_);
+	HDevWindowStack::Push(winHandle_);
+}
+
+HalconAlgoTest::~HalconAlgoTest()
+{
+
 }
 
 void HalconAlgoTest::on_btnClicked_clicked()
@@ -29,7 +35,7 @@ void HalconAlgoTest::on_btnClicked_clicked()
 	auto img{ algorithm_.getHalconRingImg() };
 	HTuple w, h;
 	GetImageSize(*img, &w, &h);
-	SetPart(winHandle, 0, 0, h, w);
+	SetPart(winHandle_, 0, 0, h, w);
 	DispObj(*img,HDevWindowStack::GetActive());
 
 

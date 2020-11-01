@@ -1,4 +1,6 @@
 #include "HalconDeepLearning.h"
+#include<QDebug>
+#include<cstring>
 #include "HalconCpp.h"
 
 using namespace HalconCpp;
@@ -138,35 +140,40 @@ void HalconDeepLearning::initDlModel(QString modelPath,int batchSize,int threadC
 	if (threadCount) {
 		setThreadCount(threadCount);
 	}
-
-	HTuple  hv_modelFile{ &(modelPath_.toStdString()[0]) };//模型路径
-	//加载训练好的网络Model
-	ReadDlModel(hv_modelFile, hv_DLModelHandle_);
-	//获得模型类名
-	GetDlModelParam(*hv_DLModelHandle_, "class_names", hv_classNames_);
-	//检查可以用的硬件(cpu/gpu)
-	HTuple hv_PossibleRuntimes;
-	check_dl_devices(&hv_PossibleRuntimes);
-	//有gpu则设置为gpu训练
-	HTuple hv_Runtime;//运行时使用gpu/cpu
-	if (0!=(hv_PossibleRuntimes.TupleRegexpTest("gpu")) && !isUseCPU_)
+	try
 	{
-		hv_Runtime = "gpu";
+		HTuple  hv_modelFile{ &(modelPath_.toStdString()[0]) };//模型路径
+		//加载训练好的网络Model
+		ReadDlModel(hv_modelFile, hv_DLModelHandle_);
+		//获得模型类名
+		GetDlModelParam(*hv_DLModelHandle_, "class_names", hv_classNames_);
+		//检查可以用的硬件(cpu/gpu)
+		HTuple hv_PossibleRuntimes;
+		check_dl_devices(&hv_PossibleRuntimes);
+		//有gpu则设置为gpu训练
+		HTuple hv_Runtime;//运行时使用gpu/cpu
+		if (0 != (hv_PossibleRuntimes.TupleRegexpTest("gpu")) && !isUseCPU_)
+		{
+			hv_Runtime = "gpu";
+		}
+		else if (0 != (hv_PossibleRuntimes.TupleRegexpTest("cpu")))
+		{
+			hv_Runtime = "cpu";
+			//设定cpu线程数
+			SetSystem("thread_num", threadCount_);//使用4个线程
+		}
+		else
+		{
+			throw HException("No supported device found to continue this example.");
+		}
+		SetDlModelParam(*hv_DLModelHandle_, "runtime", hv_Runtime);
+		//每4个镜片一起测试
+		SetDlModelParam(*hv_DLModelHandle_, "batch_size", batchSize_);
+		//创建预处理的信息字典
+		create_dl_preprocess_param_from_model(*hv_DLModelHandle_, "none", "full_domain",
+			HTuple(), HTuple(), HTuple(), hv_DLPreprocessParam_);
 	}
-	else if (0 != (hv_PossibleRuntimes.TupleRegexpTest("cpu")))
-	{
-		hv_Runtime = "cpu";
-		//设定cpu线程数
-		SetSystem("thread_num", threadCount_);//使用4个线程
+	catch(HException &e){
+		qDebug()<<e.ErrorMessage().ToLocal8bit();
 	}
-	else
-	{
-		throw HException("No supported device found to continue this example.");
-	}
-	SetDlModelParam(*hv_DLModelHandle_, "runtime", hv_Runtime);
-	//每4个镜片一起测试
-	SetDlModelParam(*hv_DLModelHandle_, "batch_size", batchSize_);
-	//创建预处理的信息字典
-	create_dl_preprocess_param_from_model(*hv_DLModelHandle_, "none", "full_domain",
-		HTuple(), HTuple(), HTuple(), hv_DLPreprocessParam_);
 }

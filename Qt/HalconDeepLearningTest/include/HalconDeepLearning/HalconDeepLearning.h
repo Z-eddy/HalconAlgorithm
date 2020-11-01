@@ -10,13 +10,12 @@ namespace HalconCpp {
 }
 
 QImage HALCONDEEPLEARNING_EXPORT hImage2Pixmap(QSharedPointer<HalconCpp::HImage> image);//转换HImage到QPixmap,通过复制的方式
+
 class HALCONDEEPLEARNING_EXPORT HalconDeepLearning:public QObject
 {//注意，只支持英伟达的GPU
 	Q_OBJECT
 
 public:
-	static QImage hImage2Pixmap(QSharedPointer<HalconCpp::HImage> image);//转换HImage到QPixmap
-
 	HalconDeepLearning(QObject *parent = Q_NULLPTR);
 	virtual ~HalconDeepLearning();
 	virtual void initDlModel(QString modelPath="",int batchSize=0,int threadCount=0);//初始化模型

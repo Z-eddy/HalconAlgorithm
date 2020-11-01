@@ -37,7 +37,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>E:\practice\halcon\Qt\temp\temp\NGImg\</string>
+     <string>E:\practice\halcon\preLensVisionCheck\temp\NGImg\</string>
     </property>
    </widget>
    <widget class="QWidget" name="halconWindow" native="true">
@@ -67,7 +67,7 @@
      <x>0</x>
      <y>0</y>
      <width>944</width>
-     <height>26</height>
+     <height>23</height>
     </rect>
    </property>
   </widget>
