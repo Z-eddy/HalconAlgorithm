@@ -15,7 +15,8 @@
 <c>        *对读取到的内容进行分割，因为 fread_line算子读取出的是一个string形式的变量，需要对其进行分割</c>
 <c>        *从csv中读取出的内容是以逗号“，”或者换行符“\n”结尾的，tuple_split 算子中第二个参数是选择分隔符号的，所以输入“，\n”。</c>
 <l>        tuple_split (outLine, ', \n ', outLineSplit)</l>
-<l>        dataAll.at(index):= outLineSplit</l>
+<l>        tuple_number (outLineSplit, Numbers)</l>
+<l>        dataAll.at(index):= Numbers</l>
 <l>        index:=index+1</l>
 <l>    endif</l>
 <l>endwhile</l>
