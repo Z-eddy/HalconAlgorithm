@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*打开csv文件，因为是读取保存内容，所以算子第二个参数选择“input”，如果选择其他项可能无法读出。FileHandle是打开文件的句柄</c>
+<l>open_file ('E:/practice/halcon/HalconAlgorithm/文件读取/csv文件读取/test.csv', 'input', FileHandle)</l>
+<c>*第一行内容为标题</c>
+<l>fread_line (FileHandle, outLine, IsEOF)</l>
+<l>index:=0</l>
+<l>while (not IsEOF)</l>
+<l>    fread_line (FileHandle, outLine, IsEOF)</l>
+<c>    *读取打开文件中的二行内容，如果返回值IsEOF是0，则代表已经读取到。如果没有读取到则返回1</c>
+<l>    if (not IsEOF)</l>
+<c>        *对读取到的内容进行分割，因为 fread_line算子读取出的是一个string形式的变量，需要对其进行分割</c>
+<c>        *从csv中读取出的内容是以逗号“，”或者换行符“\n”结尾的，tuple_split 算子中第二个参数是选择分隔符号的，所以输入“，\n”。</c>
+<l>        tuple_split (outLine, ', \n ', outLineSplit)</l>
+<l>        dataAll.at(index):= outLineSplit</l>
+<l>        index:=index+1</l>
+<l>    endif</l>
+<l>endwhile</l>
+<c>*关闭已经打开的csv文件</c>
+<l>close_file(FileHandle)</l>
+<c></c>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>

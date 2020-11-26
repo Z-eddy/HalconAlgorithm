@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>*生成手眼标定的标定板</c>
+<l>create_caltab (27, 31, 0.00258065, [13,6,6,20,20], [15,6,24,6,24], 'light_on_dark', 'calplate.cpd', 'calplate.ps')</l>
+<c>*生成单相机标定板</c>
+<l>gen_caltab (7, 7, 0.0125, 0.5, 'E:/work/AutoTestEquipmentNetPre/algorithm/caltabcaltab.descr', 'E:/work/AutoTestEquipmentNetPre/algorithm/caltabcaltab.ps')</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+</hdevelop>
