@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="GetZYZDegree">
+<interface>
+<ic>
+<par name="Pose" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="resultArr" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>Length:=|Pose|</l>
+<l>if(Length&lt;7)</l>
+<l>    return()</l>
+<l>endif</l>
+<l>pose_to_hom_mat3d (Pose, HomMat3D1)</l>
+<l>X:=HomMat3D1[3]</l>
+<l>Y:=HomMat3D1[7]</l>
+<l>Z:=HomMat3D1[11]</l>
+<l>* convert_pose_type (Pose, 'Rp+T', 'abg', 'point', PoseOut)</l>
+<c>* 获得ZYZ中的第一个Z</c>
+<l>tuple_atan2 (HomMat3D1[6], HomMat3D1[2], ATan)</l>
+<l>RZ0 := deg(ATan)</l>
+<c>* 获得ZYZ中的Y</c>
+<l>tuple_sqrt (HomMat3D1[6]*HomMat3D1[6]+HomMat3D1[2]*HomMat3D1[2], Sqrt)</l>
+<l>tuple_atan2 (Sqrt, HomMat3D1[10], ATan1)</l>
+<l>RY := deg(ATan1)</l>
+<c>* 获得ZYZ中的第二个Z</c>
+<l>tuple_atan2 (HomMat3D1[9], -HomMat3D1[8], ATan2)</l>
+<l>RZ1 := deg(ATan2)</l>
+<l>resultArr:=[X,Y,Z,RZ0,RY,RZ1]</l>
+<l>return ()</l>
+</body>
+<docu id="GetZYZDegree">
+<parameters>
+<parameter id="Pose">
+<default_type>real</default_type>
+<sem_type>pose</sem_type>
+<type_list>
+<item>real</item>
+</type_list>
+</parameter>
+<parameter id="resultArr">
+<default_type>real</default_type>
+<sem_type>real</sem_type>
+<type_list>
+<item>real</item>
+</type_list>
+</parameter>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>

@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hdevelop file_version="1.2" halcon_version="18.11.0.1">
+<procedure name="main">
+<interface/>
+<body>
+<c>* </c>
+<c>* Open text window and initialize it</c>
+<l>* dev_close_window ()</l>
+<l>open_window (0, 0, 400, 200, 0, 'visible', '', WindowHandle)</l>
+<l>set_part (WindowHandle, 0, 0, 199, 399)</l>
+<l>set_display_font (WindowHandle, 14, 'mono', 'false', 'false')</l>
+<c>* </c>
+<c>* 储存文件的路径</c>
+<l>* DataNameStart := './robotPose/robot_pose_'</l>
+<l>DataNameStart := './objPose/robot_pose_'</l>
+<l>I := 0</l>
+<c>* Let user specify pose type</c>
+<l>input_pose_type (WindowHandle, PoseType)</l>
+<c></c>
+<c>*打开csv文件，因为是读取保存内容，所以算子第二个参数选择“input”，如果选择其他项可能无法读出。FileHandle是打开文件的句柄</c>
+<l>* open_file ('pose.csv', 'input', FileHandle)</l>
+<l>open_file ('./rawObjPose.csv', 'input', FileHandle)</l>
+<c>*第一行内容为标题</c>
+<l>fread_line (FileHandle, outLine, IsEOF)</l>
+<l>index:=0</l>
+<l>while (not IsEOF)</l>
+<l>    fread_line (FileHandle, outLine, IsEOF)</l>
+<c>    *读取打开文件中的二行内容，如果返回值IsEOF是0，则代表已经读取到。如果没有读取到则返回1</c>
+<l>    if (not IsEOF)</l>
+<c>        *对读取到的内容进行分割，因为 fread_line算子读取出的是一个string形式的变量，需要对其进行分割</c>
+<c>        *从csv中读取出的内容是以逗号“，”或者换行符“\n”结尾的，tuple_split 算子中第二个参数是选择分隔符号的，所以输入“，\n”。</c>
+<l>        tuple_split (outLine, ', \n ', outLineSplit)</l>
+<l>        tuple_number (outLineSplit, Numbers)</l>
+<l>        dataAll.at(index):= Numbers</l>
+<l>        index:=index+1</l>
+<l>    endif</l>
+<l>endwhile</l>
+<c>*关闭已经打开的csv文件</c>
+<l>close_file(FileHandle)</l>
+<c></c>
+<c>* Create poses interactively</c>
+<c></c>
+<l>for Index := 0 to dataAll.length()-1 by 1</l>
+<l>    data:=dataAll.at(Index)</l>
+<l>    Tx:=data[1]</l>
+<l>    Ty:=data[2]</l>
+<l>    Tz:=data[3]</l>
+<l>    Rl:=data[4]</l>
+<l>    Rm:=data[5]</l>
+<l>    Rr:=data[6]</l>
+<c>    </c>
+<l>    if (PoseType == 'zyx/abg')</l>
+<l>        create_pose (Tx, Ty, Tz, Rl, Rm, Rr, 'Rp+T', 'abg', 'point', Pose)</l>
+<l>    else</l>
+<l>        if (PoseType == 'xyz/gba')</l>
+<l>            create_pose (Tx, Ty, Tz, Rl, Rm, Rr, 'Rp+T', 'gba', 'point', Pose)</l>
+<l>        elseif (PoseType == 'zyz')</l>
+<l>            hom_mat3d_identity (HomMat3DIdentity)</l>
+<l>            hom_mat3d_translate (HomMat3DIdentity, Tx, Ty, Tz, HomMat3DTranslate)</l>
+<l>            hom_mat3d_rotate_local (HomMat3DTranslate, rad(Rl), 'z', HomMat3DT_Rl)</l>
+<l>            hom_mat3d_rotate_local (HomMat3DT_Rl, rad(Rm), 'y', HomMat3DT_Rl_Rm)</l>
+<l>            hom_mat3d_rotate_local (HomMat3DT_Rl_Rm, rad(Rr), 'z', HomMat3D)</l>
+<l>            hom_mat3d_to_pose (HomMat3D, Pose)</l>
+<l>        else</l>
+<c>            * This line should not be reached (unknown pose type).</c>
+<l>            stop ()</l>
+<l>        endif</l>
+<l>    endif</l>
+<l>    if(Index==0)</l>
+<l>        write_pose (Pose, DataNameStart + 'trainImg' + '.dat')</l>
+<l>    elseif(Index==1)</l>
+<l>        write_pose (Pose, DataNameStart + 'trainImgPurpose' + '.dat')        </l>
+<l>    else</l>
+<l>        write_pose (Pose, DataNameStart + I$'03d' + '.dat')</l>
+<l>    endif</l>
+<l>    I := I + 1</l>
+<l>*     ask_yes_no ('Create another pose?', 'YES', 'NO', WindowHandle, CreateNextPose)</l>
+<l>endfor</l>
+<l>close_window (WindowHandle)</l>
+</body>
+<docu id="main">
+<parameters/>
+</docu>
+</procedure>
+<procedure name="ask_yes_no">
+<interface>
+<ic>
+<par name="TextQuestion" base_type="ctrl" dimension="0"/>
+<par name="TextYes" base_type="ctrl" dimension="0"/>
+<par name="TextNo" base_type="ctrl" dimension="0"/>
+<par name="WindowHandle" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="Answer" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>clear_window (WindowHandle)</l>
+<l>set_color (WindowHandle, 'blue')</l>
+<c>* Request user input for pose parameters.</c>
+<l>gen_rectangle1 (Rectangle, [80,80], [40,240], [120,120], [160,360])</l>
+<l>Colors := ['orange','orange']</l>
+<l>HighlightColors := Colors</l>
+<l>set_window_param (WindowHandle, 'flush', 'false')</l>
+<l>Selected := 0</l>
+<l>Button := 0</l>
+<l>Text := [TextYes,TextNo]</l>
+<l>while (Selected == 0 or Button != 1)</l>
+<l>    try</l>
+<l>        clear_window (WindowHandle)</l>
+<l>        disp_text (WindowHandle, TextQuestion, 'window', 'top', 'left', 'white', 'box', 'false')</l>
+<l>        set_color (WindowHandle, HighlightColors)</l>
+<l>        disp_obj (Rectangle, WindowHandle)</l>
+<l>        disp_text (WindowHandle, Text, 'image', [90,90], [90,290], 'black', 'box', 'false')</l>
+<l>        flush_buffer (WindowHandle)</l>
+<l>        get_mposition (WindowHandle, Row, Column, Button)</l>
+<l>        Selected := 0</l>
+<l>        for I := 1 to 2 by 1</l>
+<l>            select_obj (Rectangle, ObjectSelected, I)</l>
+<l>            test_region_point (ObjectSelected, Row, Column, IsInside)</l>
+<l>            if (IsInside)</l>
+<l>                Selected := I</l>
+<l>                break</l>
+<l>            endif</l>
+<l>        endfor</l>
+<l>        if (Selected &gt; 0)</l>
+<l>            tuple_insert (Colors, Selected - 1, 'yellow', HighlightColors)</l>
+<l>        else</l>
+<l>            HighlightColors := Colors</l>
+<l>        endif</l>
+<l>    catch (Exception)</l>
+<l>    endtry</l>
+<l>endwhile</l>
+<l>set_window_param (WindowHandle, 'flush', 'true')</l>
+<l>Answer := Selected == 1</l>
+<l>return ()</l>
+</body>
+<docu id="ask_yes_no">
+<short lang="en_US">ask user to answer yes/no with left/right mouse mouse button click; returns true/false</short>
+<parameters>
+<parameter id="Answer"/>
+<parameter id="TextNo"/>
+<parameter id="TextQuestion"/>
+<parameter id="TextYes"/>
+<parameter id="WindowHandle"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="input_pose">
+<interface>
+<ic>
+<par name="PoseType" base_type="ctrl" dimension="0"/>
+<par name="WindowHandle" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="Pose" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>clear_window (WindowHandle)</l>
+<l>set_color (WindowHandle, 'yellow')</l>
+<c>* Initialize variables depending on pose type.</c>
+<l>if (PoseType == 'zyx/abg')</l>
+<l>    TextsRotation := ['Rx','Ry','Rz']</l>
+<l>else</l>
+<l>    if (PoseType == 'xyz/gba')</l>
+<l>        TextsRotation := ['Rx','Ry','Rz']</l>
+<l>    elseif (PoseType == 'zyz')</l>
+<l>        TextsRotation := ['Rz left','Ry','Rz right']</l>
+<l>    else</l>
+<c>        * This line should not be reached (unknown pose type).</c>
+<l>        stop ()</l>
+<l>    endif</l>
+<l>endif</l>
+<c>* Request user input for pose parameters.</c>
+<l>disp_text (WindowHandle, 'Please enter pose (type: ' + PoseType + ')', 'window', 'top', 'left', 'white', 'box', 'false')</l>
+<l>input_numeric_value (WindowHandle, 50, 50, 'Tx [m]:   ', '', Tx)</l>
+<l>input_numeric_value (WindowHandle, 70, 50, 'Ty [m]:   ', '', Ty)</l>
+<l>input_numeric_value (WindowHandle, 90, 50, 'Tz [m]:   ', '', Tz)</l>
+<l>input_numeric_value (WindowHandle, 110, 50, TextsRotation[0] + ' [deg]: ', '', Rl)</l>
+<l>input_numeric_value (WindowHandle, 130, 50, TextsRotation[1] + ' [deg]: ', '', Rm)</l>
+<l>input_numeric_value (WindowHandle, 150, 50, TextsRotation[2] + ' [deg]: ', '', Rr)</l>
+<c>* Create pose.</c>
+<l>if (PoseType == 'zyx/abg')</l>
+<l>    create_pose (Tx, Ty, Tz, Rl, Rm, Rr, 'Rp+T', 'abg', 'point', Pose)</l>
+<l>else</l>
+<l>    if (PoseType == 'xyz/gba')</l>
+<l>        create_pose (Tx, Ty, Tz, Rl, Rm, Rr, 'Rp+T', 'gba', 'point', Pose)</l>
+<l>    elseif (PoseType == 'zyz')</l>
+<l>        hom_mat3d_identity (HomMat3DIdentity)</l>
+<l>        hom_mat3d_translate (HomMat3DIdentity, Tx, Ty, Tz, HomMat3DTranslate)</l>
+<l>        hom_mat3d_rotate_local (HomMat3DTranslate, rad(Rl), 'z', HomMat3DT_Rl)</l>
+<l>        hom_mat3d_rotate_local (HomMat3DT_Rl, rad(Rm), 'y', HomMat3DT_Rl_Rm)</l>
+<l>        hom_mat3d_rotate_local (HomMat3DT_Rl_Rm, rad(Rr), 'z', HomMat3D)</l>
+<l>        hom_mat3d_to_pose (HomMat3D, Pose)</l>
+<l>    else</l>
+<c>        * This line should not be reached (unknown pose type).</c>
+<l>        stop ()</l>
+<l>    endif</l>
+<l>endif</l>
+<l>return ()</l>
+</body>
+<docu id="input_pose">
+<short lang="en_US">let user input pose of a specified type</short>
+<parameters>
+<parameter id="Pose"/>
+<parameter id="PoseType"/>
+<parameter id="WindowHandle"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="input_pose_type">
+<interface>
+<ic>
+<par name="WindowHandle" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="PoseType" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>clear_window (WindowHandle)</l>
+<l>set_color (WindowHandle, 'blue')</l>
+<c>* Request user input for pose parameters.</c>
+<l>gen_rectangle1 (Rectangle, [80,80,80], [25,145,265], [120,120,120], [135,255,375])</l>
+<l>Colors := ['orange','orange','orange']</l>
+<l>HighlightColors := Colors</l>
+<l>set_window_param (WindowHandle, 'flush', 'false')</l>
+<l>Selected := 0</l>
+<l>Button := 0</l>
+<l>PoseTypes := ['zyx/abg','xyz/gba','zyz']</l>
+<l>while (Selected == 0 or Button != 1)</l>
+<l>    try</l>
+<l>        clear_window (WindowHandle)</l>
+<l>        disp_text (WindowHandle, 'Specify pose type', 'window', 'top', 'left', 'white', 'box', 'false')</l>
+<l>        set_color (WindowHandle, HighlightColors)</l>
+<l>        disp_obj (Rectangle, WindowHandle)</l>
+<l>        disp_text (WindowHandle, PoseTypes, 'image', [90,90,90], [55,175,310], 'black', 'box', 'false')</l>
+<l>        flush_buffer (WindowHandle)</l>
+<l>        get_mposition (WindowHandle, Row, Column, Button)</l>
+<l>        Selected := 0</l>
+<l>        for I := 1 to 3 by 1</l>
+<l>            select_obj (Rectangle, ObjectSelected, I)</l>
+<l>            test_region_point (ObjectSelected, Row, Column, IsInside)</l>
+<l>            if (IsInside)</l>
+<l>                Selected := I</l>
+<l>                break</l>
+<l>            endif</l>
+<l>        endfor</l>
+<l>        if (Selected &gt; 0)</l>
+<l>            tuple_insert (Colors, Selected - 1, 'yellow', HighlightColors)</l>
+<l>        else</l>
+<l>            HighlightColors := Colors</l>
+<l>        endif</l>
+<l>    catch (Exception)</l>
+<l>    endtry</l>
+<l>endwhile</l>
+<l>set_window_param (WindowHandle, 'flush', 'true')</l>
+<l>PoseType := PoseTypes[Selected - 1]</l>
+<l>return ()</l>
+</body>
+<docu id="input_pose_type">
+<short lang="en_US">let user input pose type</short>
+<parameters>
+<parameter id="PoseType"/>
+<parameter id="WindowHandle"/>
+</parameters>
+</docu>
+</procedure>
+<procedure name="input_numeric_value">
+<interface>
+<ic>
+<par name="WindowHandle" base_type="ctrl" dimension="0"/>
+<par name="Row" base_type="ctrl" dimension="0"/>
+<par name="Column" base_type="ctrl" dimension="0"/>
+<par name="Text" base_type="ctrl" dimension="0"/>
+<par name="DefaultValue" base_type="ctrl" dimension="0"/>
+</ic>
+<oc>
+<par name="NumericValue" base_type="ctrl" dimension="0"/>
+</oc>
+</interface>
+<body>
+<l>MaxStringLength := 32</l>
+<l>disp_text (WindowHandle, Text, 'window', Row, Column, 'white', 'box', 'false')</l>
+<l>get_string_extents (WindowHandle, Text, Ascent, Descent, Width, Height)</l>
+<l>set_tposition (WindowHandle, Row, Column + Width)</l>
+<l>read_string (WindowHandle, DefaultValue, MaxStringLength, StringValue)</l>
+<l>NumericValue := number(StringValue)</l>
+<l>return ()</l>
+</body>
+<docu id="input_numeric_value">
+<short lang="en_US">let the user input a numeric value via a text window</short>
+<parameters>
+<parameter id="Column"/>
+<parameter id="DefaultValue"/>
+<parameter id="NumericValue"/>
+<parameter id="Row"/>
+<parameter id="Text"/>
+<parameter id="WindowHandle"/>
+</parameters>
+</docu>
+</procedure>
+</hdevelop>
